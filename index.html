@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Accounting Records</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0f1117;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1d27, #2a2d3a);
+      border-bottom: 1px solid #333;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    header h1 {
+      font-size: 24px;
+      color: #4fc3f7;
+      font-weight: 700;
+    }
+
+    header h1 span {
+      color: #81c784;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 24px;
+    }
+
+    .stat-box {
+      text-align: center;
+      background: #1a1d27;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 10px 20px;
+    }
+
+    .stat-box .num {
+      font-size: 22px;
+      font-weight: 700;
+      color: #4fc3f7;
+    }
+
+    .stat-box .label {
+      font-size: 11px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #4fc3f7;
+      color: #0f1117;
+    }
+
+    .btn-primary:hover { background: #81d4fa; }
+
+    .btn-success {
+      background: #81c784;
+      color: #0f1117;
+    }
+
+    .btn-success:hover { background: #a5d6a7; }
+
+    .btn-danger {
+      background: #e57373;
+      color: #0f1117;
+    }
+
+    .btn-danger:hover { background: #ef9a9a; }
+
+    .btn-outline {
+      background: transparent;
+      color: #4fc3f7;
+      border: 1px solid #4fc3f7;
+    }
+
+    .btn-outline:hover {
+      background: #4fc3f7;
+      color: #0f1117;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 24px;
+      background: #1a1d27;
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid #2a2d3a;
+    }
+
+    .filter-bar label {
+      font-size: 13px;
+      color: #888;
+      font-weight: 600;
+    }
+
+    .filter-bar input, .filter-bar select {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #12141c;
+      color: #e0e0e0;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .filter-bar input:focus, .filter-bar select:focus {
+      border-color: #4fc3f7;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: #1a1d27;
+      border: 1px solid #333;
+      border-radius: 14px;
+      padding: 30px;
+      width: 520px;
+      max-width: 95vw;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal h2 {
+      color: #4fc3f7;
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: #aaa;
+      font-weight: 600;
+    }
+
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      background: #12141c;
+      color: #e0e0e0;
+      font-size: 14px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: #4fc3f7;
+    }
+
+    .form-group textarea { resize: vertical; min-height: 70px; }
+
+    .form-group input[type="file"] {
+      padding: 8px;
+      border: 2px dashed #333;
+      background: #12141c;
+      cursor: pointer;
+    }
+
+    .form-group input[type="file"]:hover {
+      border-color: #4fc3f7;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    /* Table */
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid #2a2d3a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead {
+      background: #1a1d27;
+    }
+
+    thead th {
+      padding: 14px 16px;
+      text-align: left;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      border-bottom: 1px solid #2a2d3a;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    thead th:hover { color: #4fc3f7; }
+
+    tbody tr {
+      border-bottom: 1px solid #1e2029;
+      transition: background 0.15s;
+    }
+
+    tbody tr:hover { background: #1e2030; }
+
+    tbody td {
+      padding: 12px 16px;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    .category-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .cat-invoice { background: #1b3a4b; color: #4fc3f7; }
+    .cat-tax { background: #3a2a1b; color: #ffb74d; }
+    .cat-expense { background: #3a1b2a; color: #f48fb1; }
+    .cat-revenue { background: #1b3a2a; color: #81c784; }
+    .cat-payroll { background: #2a1b3a; color: #b39ddb; }
+    .cat-receipt { background: #3a3a1b; color: #fff176; }
+    .cat-other { background: #2a2a2a; color: #bbb; }
+
+    .file-link {
+      color: #4fc3f7;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .file-link:hover { text-decoration: underline; }
+
+    .action-btns {
+      display: flex;
+      gap: 6px;
+    }
+
+    .action-btns button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+
+    .action-btns button:hover {
+      background: #2a2d3a;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #555;
+    }
+
+    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+    .empty-state p { font-size: 16px; }
+
+    .search-input {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #12141c;
+      color: #e0e0e0;
+      font-size: 13px;
+      outline: none;
+      min-width: 220px;
+    }
+
+    .search-input:focus { border-color: #4fc3f7; }
+
+    .year-chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .year-chip {
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1px solid #333;
+      background: transparent;
+      color: #aaa;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.15s;
+    }
+
+    .year-chip:hover, .year-chip.active {
+      background: #4fc3f7;
+      color: #0f1117;
+      border-color: #4fc3f7;
+    }
+
+    .view-toggle {
+      display: flex;
+      gap: 4px;
+      margin-left: auto;
+    }
+
+    .view-toggle button {
+      padding: 8px 12px;
+      border: 1px solid #333;
+      background: transparent;
+      color: #888;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .view-toggle button:first-child { border-radius: 6px 0 0 6px; }
+    .view-toggle button:last-child { border-radius: 0 6px 6px 0; }
+
+    .view-toggle button.active {
+      background: #4fc3f7;
+      color: #0f1117;
+      border-color: #4fc3f7;
+    }
+
+    .cards-view {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 10px;
+      padding: 20px;
+      transition: border-color 0.15s;
+    }
+
+    .card:hover { border-color: #4fc3f7; }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .card h3 {
+      font-size: 16px;
+      color: #e0e0e0;
+      margin-bottom: 4px;
+    }
+
+    .card .date {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .card .amount {
+      font-size: 18px;
+      font-weight: 700;
+      color: #81c784;
+      margin: 8px 0;
+    }
+
+    .card .notes {
+      font-size: 13px;
+      color: #888;
+      line-height: 1.4;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #2a2d3a;
+    }
+
+    @media (max-width: 600px) {
+      header { padding: 16px 20px; }
+      header h1 { font-size: 18px; }
+      .stats-bar { gap: 12px; }
+      .stat-box { padding: 8px 14px; }
+      .stat-box .num { font-size: 18px; }
+      .container { padding: 20px 12px; }
+      .modal { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>My <span>Accounting</span> Records</h1>
+    <div class="stats-bar">
+      <div class="stat-box">
+        <div class="num" id="totalRecords">0</div>
+        <div class="label">Records</div>
+      </div>
+      <div class="stat-box">
+        <div class="num" id="totalAmount">$0</div>
+        <div class="label">Total Amount</div>
+      </div>
+      <div class="stat-box">
+        <div class="num" id="thisYearCount">0</div>
+        <div class="label">This Year</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="top-actions">
+      <button class="btn btn-primary" onclick="openModal()">+ New Record</button>
+      <button class="btn btn-success" onclick="exportCSV()">Export CSV</button>
+      <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">Import CSV</button>
+      <input type="file" id="importFile" accept=".csv" style="display:none" onchange="importCSV(event)">
+      <button class="btn btn-danger" onclick="clearAll()" title="Delete all records">Clear All</button>
+    </div>
+
+    <div class="filter-bar">
+      <label>Search:</label>
+      <input type="text" class="search-input" id="searchInput" placeholder="Search records..." oninput="renderRecords()">
+      <label>Category:</label>
+      <select id="filterCategory" onchange="renderRecords()">
+        <option value="">All</option>
+        <option value="Invoice">Invoice</option>
+        <option value="Tax">Tax</option>
+        <option value="Expense">Expense</option>
+        <option value="Revenue">Revenue</option>
+        <option value="Payroll">Payroll</option>
+        <option value="Receipt">Receipt</option>
+        <option value="Other">Other</option>
+      </select>
+      <div class="view-toggle">
+        <button class="active" id="tableViewBtn" onclick="setView('table')">Table</button>
+        <button id="cardViewBtn" onclick="setView('cards')">Cards</button>
+      </div>
+    </div>
+
+    <div id="yearChips" class="year-chips" style="margin-bottom: 20px;"></div>
+
+    <div id="recordsContainer"></div>
+  </div>
+
+  <!-- Add/Edit Modal -->
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModalOverlay(event)">
+    <div class="modal">
+      <h2 id="modalTitle">Add New Record</h2>
+      <input type="hidden" id="editId">
+      <div class="form-group">
+        <label>Title *</label>
+        <input type="text" id="recTitle" placeholder="e.g. Q3 Invoice - Client ABC">
+      </div>
+      <div class="form-group">
+        <label>Date *</label>
+        <input type="date" id="recDate">
+      </div>
+      <div class="form-group">
+        <label>Category *</label>
+        <select id="recCategory">
+          <option value="Invoice">Invoice</option>
+          <option value="Tax">Tax</option>
+          <option value="Expense">Expense</option>
+          <option value="Revenue">Revenue</option>
+          <option value="Payroll">Payroll</option>
+          <option value="Receipt">Receipt</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Amount ($)</label>
+        <input type="number" id="recAmount" placeholder="0.00" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Description / Notes</label>
+        <textarea id="recNotes" placeholder="Any notes about this record..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Attach File (stored locally)</label>
+        <input type="file" id="recFile">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveRecord()">Save Record</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Detail Modal -->
+  <div class="modal-overlay" id="detailOverlay" onclick="closeDetailOverlay(event)">
+    <div class="modal">
+      <h2 id="detailTitle">Record Details</h2>
+      <div id="detailContent"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeDetail()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let records = JSON.parse(localStorage.getItem('accountingRecords') || '[]');
+    let currentView = 'table';
+    let selectedYear = '';
+
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    }
+
+    function save() {
+      localStorage.setItem('accountingRecords', JSON.stringify(records));
+      updateStats();
+    }
+
+    function updateStats() {
+      document.getElementById('totalRecords').textContent = records.length;
+      const total = records.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+      document.getElementById('totalAmount').textContent = '$' + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const thisYear = new Date().getFullYear();
+      document.getElementById('thisYearCount').textContent = records.filter(r => r.date && r.date.startsWith(thisYear.toString())).length;
+    }
+
+    function getYears() {
+      const years = [...new Set(records.map(r => r.date ? r.date.substring(0, 4) : '').filter(Boolean))].sort().reverse();
+      return years;
+    }
+
+    function renderYearChips() {
+      const years = getYears();
+      const container = document.getElementById('yearChips');
+      if (years.length === 0) { container.innerHTML = ''; return; }
+      container.innerHTML = '<button class="year-chip ' + (selectedYear === '' ? 'active' : '') + '" onclick="selectYear(\'\')">All Years</button>' +
+        years.map(y => '<button class="year-chip ' + (selectedYear === y ? 'active' : '') + '" onclick="selectYear(\'' + y + '\')">' + y + '</button>').join('');
+    }
+
+    function selectYear(y) {
+      selectedYear = y;
+      renderYearChips();
+      renderRecords();
+    }
+
+    function getFilteredRecords() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const cat = document.getElementById('filterCategory').value;
+      return records.filter(r => {
+        if (selectedYear && (!r.date || !r.date.startsWith(selectedYear))) return false;
+        if (cat && r.category !== cat) return false;
+        if (search) {
+          const haystack = (r.title + ' ' + r.notes + ' ' + r.category + ' ' + r.amount + ' ' + r.date).toLowerCase();
+          if (!haystack.includes(search)) return false;
+        }
+        return true;
+      }).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    }
+
+    function catClass(cat) {
+      const map = { Invoice: 'cat-invoice', Tax: 'cat-tax', Expense: 'cat-expense', Revenue: 'cat-revenue', Payroll: 'cat-payroll', Receipt: 'cat-receipt' };
+      return map[cat] || 'cat-other';
+    }
+
+    function formatAmount(a) {
+      const n = parseFloat(a);
+      if (isNaN(n)) return '-';
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str || '';
+      return div.innerHTML;
+    }
+
+    function renderRecords() {
+      renderYearChips();
+      const filtered = getFilteredRecords();
+      const container = document.getElementById('recordsContainer');
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">No records</div><p>No records found. Click <strong>+ New Record</strong> to add one.</p></div>';
+        return;
+      }
+
+      if (currentView === 'table') {
+        let html = '<div class="table-wrapper"><table><thead><tr>';
+        html += '<th onclick="sortBy(\'date\')">Date</th>';
+        html += '<th onclick="sortBy(\'title\')">Title</th>';
+        html += '<th onclick="sortBy(\'category\')">Category</th>';
+        html += '<th onclick="sortBy(\'amount\')">Amount</th>';
+        html += '<th>Notes</th>';
+        html += '<th>File</th>';
+        html += '<th>Actions</th>';
+        html += '</tr></thead><tbody>';
+        filtered.forEach(r => {
+          html += '<tr>';
+          html += '<td>' + escapeHtml(r.date) + '</td>';
+          html += '<td style="font-weight:600">' + escapeHtml(r.title) + '</td>';
+          html += '<td><span class="category-badge ' + catClass(r.category) + '">' + escapeHtml(r.category) + '</span></td>';
+          html += '<td style="font-weight:600;color:#81c784">' + formatAmount(r.amount) + '</td>';
+          html += '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#888">' + escapeHtml(r.notes) + '</td>';
+          html += '<td>' + (r.fileName ? '<a class="file-link" onclick="viewDetail(\'' + r.id + '\')">📎 ' + escapeHtml(r.fileName) + '</a>' : '<span style="color:#444">-</span>') + '</td>';
+          html += '<td><div class="action-btns">';
+          html += '<button onclick="viewDetail(\'' + r.id + '\')" title="View">View</button>';
+          html += '<button onclick="editRecord(\'' + r.id + '\')" title="Edit">Edit</button>';
+          html += '<button onclick="deleteRecord(\'' + r.id + '\')" title="Delete">Del</button>';
+          html += '</div></td></tr>';
+        });
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+      } else {
+        let html = '<div class="cards-view">';
+        filtered.forEach(r => {
+          html += '<div class="card">';
+          html += '<div class="card-header"><div><h3>' + escapeHtml(r.title) + '</h3><div class="date">' + escapeHtml(r.date) + '</div></div>';
+          html += '<span class="category-badge ' + catClass(r.category) + '">' + escapeHtml(r.category) + '</span></div>';
+          html += '<div class="amount">' + formatAmount(r.amount) + '</div>';
+          if (r.notes) html += '<div class="notes">' + escapeHtml(r.notes) + '</div>';
+          html += '<div class="card-footer">';
+          html += r.fileName ? '<a class="file-link" onclick="viewDetail(\'' + r.id + '\')">📎 ' + escapeHtml(r.fileName) + '</a>' : '<span></span>';
+          html += '<div class="action-btns">';
+          html += '<button onclick="viewDetail(\'' + r.id + '\')" title="View">View</button>';
+          html += '<button onclick="editRecord(\'' + r.id + '\')" title="Edit">Edit</button>';
+          html += '<button onclick="deleteRecord(\'' + r.id + '\')" title="Delete">Del</button>';
+          html += '</div></div></div>';
+        });
+        html += '</div>';
+        container.innerHTML = html;
+      }
+    }
+
+    function setView(v) {
+      currentView = v;
+      document.getElementById('tableViewBtn').classList.toggle('active', v === 'table');
+      document.getElementById('cardViewBtn').classList.toggle('active', v === 'cards');
+      renderRecords();
+    }
+
+    function openModal(editId) {
+      document.getElementById('editId').value = editId || '';
+      document.getElementById('modalTitle').textContent = editId ? 'Edit Record' : 'Add New Record';
+      document.getElementById('recFile').value = '';
+      if (!editId) {
+        document.getElementById('recTitle').value = '';
+        document.getElementById('recDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('recCategory').value = 'Invoice';
+        document.getElementById('recAmount').value = '';
+        document.getElementById('recNotes').value = '';
+      }
+      document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modalOverlay').classList.remove('active');
+    }
+
+    function closeModalOverlay(e) {
+      if (e.target === e.currentTarget) closeModal();
+    }
+
+    function saveRecord() {
+      const title = document.getElementById('recTitle').value.trim();
+      const date = document.getElementById('recDate').value;
+      const category = document.getElementById('recCategory').value;
+      const amount = document.getElementById('recAmount').value;
+      const notes = document.getElementById('recNotes').value.trim();
+      const fileInput = document.getElementById('recFile');
+
+      if (!title) { alert('Title is required.'); return; }
+      if (!date) { alert('Date is required.'); return; }
+
+      const editId = document.getElementById('editId').value;
+
+      function doSave(fileName, fileData) {
+        if (editId) {
+          const idx = records.findIndex(r => r.id === editId);
+          if (idx !== -1) {
+            records[idx].title = title;
+            records[idx].date = date;
+            records[idx].category = category;
+            records[idx].amount = amount;
+            records[idx].notes = notes;
+            if (fileName !== undefined) { records[idx].fileName = fileName; records[idx].fileData = fileData; }
+          }
+        } else {
+          records.push({
+            id: generateId(),
+            title, date, category, amount, notes,
+            fileName: fileName || '',
+            fileData: fileData || '',
+            createdAt: new Date().toISOString()
+          });
+        }
+        save();
+        renderRecords();
+        closeModal();
+      }
+
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+          alert('File too large. Max 5MB.');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          doSave(file.name, e.target.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        doSave();
+      }
+    }
+
+    function editRecord(id) {
+      const r = records.find(x => x.id === id);
+      if (!r) return;
+      document.getElementById('recTitle').value = r.title || '';
+      document.getElementById('recDate').value = r.date || '';
+      document.getElementById('recCategory').value = r.category || 'Invoice';
+      document.getElementById('recAmount').value = r.amount || '';
+      document.getElementById('recNotes').value = r.notes || '';
+      openModal(id);
+    }
+
+    function deleteRecord(id) {
+      if (!confirm('Delete this record?')) return;
+      records = records.filter(r => r.id !== id);
+      save();
+      renderRecords();
+    }
+
+    function clearAll() {
+      if (!confirm('Delete ALL records? This cannot be undone.')) return;
+      records = [];
+      save();
+      renderRecords();
+    }
+
+    function viewDetail(id) {
+      const r = records.find(x => x.id === id);
+      if (!r) return;
+      let html = '<div style="margin-top:12px">';
+      html += '<p><strong>Date:</strong> ' + escapeHtml(r.date) + '</p>';
+      html += '<p><strong>Category:</strong> <span class="category-badge ' + catClass(r.category) + '">' + escapeHtml(r.category) + '</span></p>';
+      html += '<p><strong>Amount:</strong> ' + formatAmount(r.amount) + '</p>';
+      if (r.notes) html += '<p><strong>Notes:</strong> ' + escapeHtml(r.notes) + '</p>';
+      if (r.fileName) {
+        html += '<p><strong>File:</strong> ' + escapeHtml(r.fileName) + '</p>';
+        if (r.fileData && r.fileData.startsWith('data:image')) {
+          html += '<div style="margin-top:12px"><img src="' + r.fileData + '" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>';
+        } else if (r.fileData) {
+          html += '<p><a class="file-link" href="' + r.fileData + '" download="' + escapeHtml(r.fileName) + '" style="font-size:15px">Download ' + escapeHtml(r.fileName) + '</a></p>';
+        }
+      }
+      if (r.createdAt) html += '<p style="margin-top:12px;color:#555;font-size:12px">Created: ' + escapeHtml(r.createdAt) + '</p>';
+      html += '</div>';
+      document.getElementById('detailTitle').textContent = r.title;
+      document.getElementById('detailContent').innerHTML = html;
+      document.getElementById('detailOverlay').classList.add('active');
+    }
+
+    function closeDetail() { document.getElementById('detailOverlay').classList.remove('active'); }
+    function closeDetailOverlay(e) { if (e.target === e.currentTarget) closeDetail(); }
+
+    function exportCSV() {
+      if (records.length === 0) { alert('No records to export.'); return; }
+      let csv = 'Title,Date,Category,Amount,Notes,File\n';
+      records.forEach(r => {
+        csv += '"' + (r.title || '').replace(/"/g, '""') + '",';
+        csv += '"' + (r.date || '') + '",';
+        csv += '"' + (r.category || '') + '",';
+        csv += '"' + (r.amount || '') + '",';
+        csv += '"' + (r.notes || '').replace(/"/g, '""') + '",';
+        csv += '"' + (r.fileName || '') + '"\n';
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'accounting-records-' + new Date().toISOString().split('T')[0] + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importCSV(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split('\n').filter(l => l.trim());
+        if (lines.length < 2) { alert('CSV file is empty or has no data rows.'); return; }
+        let imported = 0;
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
+          const clean = cols.map(c => c.replace(/^"|"$/g, '').replace(/""/g, '"').trim());
+          if (clean[0]) {
+            records.push({
+              id: generateId(),
+              title: clean[0] || '',
+              date: clean[1] || '',
+              category: clean[2] || 'Other',
+              amount: clean[3] || '',
+              notes: clean[4] || '',
+              fileName: clean[5] || '',
+              fileData: '',
+              createdAt: new Date().toISOString()
+            });
+            imported++;
+          }
+        }
+        save();
+        renderRecords();
+        alert('Imported ' + imported + ' records.');
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function sortBy(field) {
+      records.sort((a, b) => {
+        let va = a[field] || '';
+        let vb = b[field] || '';
+        if (field === 'amount') { va = parseFloat(va) || 0; vb = parseFloat(vb) || 0; return va - vb; }
+        return va.localeCompare(vb);
+      });
+      renderRecords();
+    }
+
+    updateStats();
+    renderRecords();
+  </script>
+</body>
+</html>
