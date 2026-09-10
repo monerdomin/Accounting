@@ -1573,8 +1573,8 @@
 
     async function deleteMyAccount() {
       if (isAdmin()) {
-        alert('You are the admin. Your account grants admin access, so you cannot delete it from here. Ask another admin to delete you, or delete you via the Admin Panel.');
-        return;
+        alert('You are the admin. Deleting your account will leave the app with NO admin until someone new sets role=admin from the Firebase Console.\n\nYou can still proceed if you understand this.');
+        if (!confirm('Continue deleting the admin account? The app will have no admin afterwards.')) return;
       }
       var pass = document.getElementById('deletePass').value;
       if (!pass) { alert('Type your password to confirm deletion.'); return; }
