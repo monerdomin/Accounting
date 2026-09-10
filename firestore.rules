@@ -17,7 +17,7 @@ service cloud.firestore {
       allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
       allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.role == 'user';
       allow update: if (request.auth != null && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'email'])) || isAdmin();
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'email', 'currency'])) || isAdmin();
       allow delete: if isAdmin();
     }
 

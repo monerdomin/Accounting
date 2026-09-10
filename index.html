@@ -197,6 +197,33 @@
     }
 
     .user-chip .email { font-size: 13px; color: #ccc; }
+
+    .currency-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .ccy-group { display: flex; gap: 6px; }
+    .ccy-group button {
+      padding: 6px 14px;
+      background: #12141c;
+      border: 1px solid #333;
+      color: #aaa;
+      border-radius: 18px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .ccy-group button.active {
+      background: #1b3a4b;
+      border-color: #4fc3f7;
+      color: #4fc3f7;
+    }
+    .rate-info { font-size: 12px; color: #777; }
+    .rate-info b { color: #81c784; }
     .role-badge {
       font-size: 11px;
       font-weight: 700;
@@ -607,6 +634,13 @@
         </div>
         <button class="btn-logout" onclick="handleLogout()">Logout</button>
       </div>
+      <div class="currency-bar">
+        <div class="ccy-group">
+          <button id="ccyUsdBtn" class="active" onclick="setCurrency('USD')">USD $</button>
+          <button id="ccySypBtn" onclick="setCurrency('SYP')">SYP</button>
+        </div>
+        <span id="rateInfo" class="rate-info">Loading USD live rate…</span>
+      </div>
     </header>
 
     <div class="nav-tabs">
@@ -820,6 +854,8 @@
     var selectedYear = '';
     var editingRecordId = null;
     var adminTargetUid = null;
+    var currency = 'USD';         // display currency: 'USD' or 'SYP'
+    var liveRate = null;          // {buy, sell, ts} USD->SYP live rate
 
     // ============ AUTH FLOW ============
     auth.onAuthStateChanged(async function(user) {
@@ -828,6 +864,8 @@
         await loadMyUser();
         showApp();
         await refreshAllData();
+        fetchLiveRate();
+        setInterval(fetchLiveRate, 15 * 60 * 1000);
       } else {
         showAuth();
       }
@@ -964,6 +1002,7 @@
           displayName: name,
           role: 'user',
           banned: false,
+          currency: 'USD',
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         // auth.onAuthStateChanged will take over now
@@ -1002,6 +1041,12 @@
       } else {
         myUserDoc = { email: currentUser.email, role: 'user', displayName: currentUser.displayName || '' };
       }
+      currency = myUserDoc.currency === 'SYP' ? 'SYP' : 'USD';
+      if (!myUserDoc.currency) {
+        var ls = localStorage.getItem('acct_currency');
+        if (ls === 'SYP') { currency = 'SYP'; myUserDoc.currency = 'SYP'; }
+      }
+      applyCurrencyUI();
     }
 
     function resetState() {
@@ -1119,8 +1164,88 @@
       return records.filter(function(r) { return r.date && r.date >= startDate; });
     }
 
+    function toDisplayUSD(n) {
+      if (currency !== 'SYP') return n;
+      var buy = liveRate && liveRate.buy;
+      return buy ? n * buy : n;
+    }
+
     function fmtMoney(n) {
-      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      var v = toDisplayUSD(n);
+      if (currency === 'SYP') return 'SYP ' + Math.round(v).toLocaleString('en-US');
+      return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function applyCurrencyUI() {
+      var usd = document.getElementById('ccyUsdBtn');
+      var syp = document.getElementById('ccySypBtn');
+      if (!usd) return;
+      usd.classList.toggle('active', currency === 'USD');
+      syp.classList.toggle('active', currency === 'SYP');
+      updateRateInfo();
+    }
+
+    function rerenderCurrency() {
+      updateStats();
+      renderRecords();
+      if (isAdmin()) { renderAllRecords(); renderAdminUsers(); }
+    }
+
+    function setCurrency(c) {
+      if (c !== 'USD' && c !== 'SYP') return;
+      currency = c;
+      localStorage.setItem('acct_currency', c);
+      applyCurrencyUI();
+      rerenderCurrency();
+      if (myUserDoc && currentUser) {
+        myUserDoc.currency = c;
+        db.collection('users').doc(currentUser.uid).update({ currency: c }).catch(function(){});
+      }
+    }
+
+    function updateRateInfo() {
+      var el = document.getElementById('rateInfo');
+      if (!el) return;
+      if (!liveRate) { el.innerHTML = 'Loading USD live rate…'; return; }
+      var when = new Date(liveRate.ts).toLocaleTimeString();
+      el.innerHTML = '1 USD = <b>' + liveRate.buy.toFixed(2) + '</b> SYP (buy) / ' + liveRate.sell.toFixed(2) + ' SYP (sell) &middot; live from sp-today.com &middot; ' + when;
+    }
+
+    function fetchLiveRate(force) {
+      var cached = null;
+      try { cached = JSON.parse(localStorage.getItem('acct_rate') || 'null'); } catch (e) {}
+      if (!force && cached && cached.buy && (Date.now() - cached.ts) < 15 * 60 * 1000) {
+        liveRate = cached;
+        updateRateInfo();
+        return;
+      }
+      fetch('https://r.jina.ai/https://sp-today.com/en/currency/us-dollar', { cache: 'no-store' })
+        .then(function(res) { return res.text(); })
+        .then(function(txt) {
+          var r = parseRate(txt);
+          if (r) {
+            liveRate = r;
+            try { localStorage.setItem('acct_rate', JSON.stringify(r)); } catch (e) {}
+            updateRateInfo();
+            if (currency === 'SYP') rerenderCurrency();
+          } else {
+            if (cached) liveRate = cached;
+            updateRateInfo();
+          }
+        })
+        .catch(function() {
+          if (cached) liveRate = cached;
+          updateRateInfo();
+        });
+    }
+
+    function parseRate(txt) {
+      var m = txt.match(/\|\s*1\s*USD\s*\|\s*([\d.,]+)\s*SYP[^|]*\|\s*([\d.,]+)\s*SYP/);
+      if (!m) return null;
+      function num(s) { return parseFloat(s.replace(/,/g, '')); }
+      var buy = num(m[1]), sell = num(m[2]);
+      if (!buy || !sell) return null;
+      return { buy: buy, sell: sell, ts: Date.now() };
     }
 
     function renderSummary() {
@@ -1195,7 +1320,7 @@
     function formatAmount(a) {
       var n = parseFloat(a);
       if (isNaN(n)) return '-';
-      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return fmtMoney(n);
     }
 
     function escapeHtml(str) {
@@ -1390,7 +1515,7 @@
         csv += '"' + (r.title || '').replace(/"/g, '""') + '",';
         csv += '"' + (r.date || '') + '",';
         csv += '"' + (r.category || '') + '",';
-        csv += '"' + (r.amount != null ? r.amount : '') + '",';
+        csv += '"' + (currency === 'SYP' ? toDisplayUSD(recValue(r)).toFixed(0) : toDisplayUSD(recValue(r)).toFixed(2)) + '",';
         csv += '"' + (r.notes || '').replace(/"/g, '""') + '",';
         csv += '"' + (r.fileName || '') + '"\n';
       });
