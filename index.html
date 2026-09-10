@@ -928,14 +928,22 @@
     }
 
     async function loadMyRecords() {
-      var snap = await db.collection('records')
-        .where('ownerUid', '==', currentUser.uid)
-        .orderBy('date', 'desc')
-        .get();
-      myRecords = [];
-      snap.forEach(function(doc) { myRecords.push(Object.assign({ id: doc.id }, doc.data())); });
-      renderRecords();
-      updateStats();
+      try {
+        var snap = await db.collection('records')
+          .where('ownerUid', '==', currentUser.uid)
+          .orderBy('date', 'desc')
+          .get();
+        myRecords = [];
+        snap.forEach(function(doc) { myRecords.push(Object.assign({ id: doc.id }, doc.data())); });
+        renderRecords();
+        updateStats();
+      } catch (e) {
+        myRecords = [];
+        renderRecords();
+        updateStats();
+        var container = document.getElementById('recordsContainer');
+        container.innerHTML = '<div class="empty-state"><div class="icon">Load error</div><p>Could not load records: ' + escapeHtml(e.message) + '<br><br>Refresh the page after a minute if this just started.</p></div>';
+      }
     }
 
     async function loadAllData() {
