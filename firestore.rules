@@ -6,6 +6,10 @@ service cloud.firestore {
       return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    function isBanned() {
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banned == true;
+    }
+
     // Users collection
     match /users/{uid} {
       allow read: if request.auth != null;
@@ -16,9 +20,11 @@ service cloud.firestore {
 
     // Records collection
     match /records/{recordId} {
+      // Banned users can still read/export their old records
       allow read: if request.auth != null && (resource.data.ownerUid == request.auth.uid || isAdmin());
-      allow create: if request.auth != null && request.resource.data.ownerUid == request.auth.uid;
-      allow update, delete: if request.auth != null && (resource.data.ownerUid == request.auth.uid || isAdmin());
+      // Banned users CANNOT create, edit, or delete
+      allow create: if request.auth != null && !isBanned() && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if request.auth != null && !isBanned() && (resource.data.ownerUid == request.auth.uid || isAdmin());
     }
   }
 }

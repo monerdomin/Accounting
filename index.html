@@ -366,6 +366,63 @@
     .cat-payroll { background: #2a1b3a; color: #b39ddb; }
     .cat-receipt { background: #3a3a1b; color: #fff176; }
     .cat-other { background: #2a2a2a; color: #bbb; }
+    .cat-spending { background: #3a1b3a; color: #ce93d8; }
+
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .badge-green { background: #1b3a2a; color: #81c784; }
+    .badge-gray { background: #2a2a2a; color: #bbb; }
+    .badge-red { background: #3a1b1b; color: #f48fb1; }
+
+    .banner {
+      background: #3a1b1b;
+      border: 1px solid #5c2a2a;
+      color: #f48fb1;
+      padding: 12px 18px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .summary-card {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .summary-card h4 {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    .summary-card .row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 3px 0;
+    }
+
+    .summary-card .row .lbl { color: #888; }
+    .summary-card .row.income { color: #81c784; }
+    .summary-card .row.spending { color: #f48fb1; }
+    .summary-card .row.net {
+      color: #4fc3f7;
+      font-weight: 700;
+      border-top: 1px solid #2a2d3a;
+      margin-top: 4px;
+      padding-top: 6px;
+    }
 
     .file-link { color: #4fc3f7; text-decoration: none; font-size: 13px; cursor: pointer; }
     .file-link:hover { text-decoration: underline; }
@@ -535,14 +592,48 @@
 
     <!-- My Records panel -->
     <div id="recordsPanel" class="container">
+      <div class="banner" id="bannedBanner">
+        <strong>Your account is currently suspended by the admin.</strong> You can still view and
+        export your old records, but you cannot add or change anything. Contact the admin to be reactivated.
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-card">
+          <h4>This Week</h4>
+          <div class="row income"><span class="lbl">Income</span><span id="wkInc">$0</span></div>
+          <div class="row spending"><span class="lbl">Spending</span><span id="wkSpd">$0</span></div>
+          <div class="row net"><span class="lbl">Balance</span><span id="wkNet">$0</span></div>
+        </div>
+        <div class="summary-card">
+          <h4>This Month</h4>
+          <div class="row income"><span class="lbl">Income</span><span id="moInc">$0</span></div>
+          <div class="row spending"><span class="lbl">Spending</span><span id="moSpd">$0</span></div>
+          <div class="row net"><span class="lbl">Balance</span><span id="moNet">$0</span></div>
+        </div>
+        <div class="summary-card">
+          <h4>This Year</h4>
+          <div class="row income"><span class="lbl">Income</span><span id="yrInc">$0</span></div>
+          <div class="row spending"><span class="lbl">Spending</span><span id="yrSpd">$0</span></div>
+          <div class="row net"><span class="lbl">Balance</span><span id="yrNet">$0</span></div>
+        </div>
+        <div class="summary-card">
+          <h4>All Time</h4>
+          <div class="row income"><span class="lbl">Income</span><span id="alInc">$0</span></div>
+          <div class="row spending"><span class="lbl">Spending</span><span id="alSpd">$0</span></div>
+          <div class="row net"><span class="lbl">Balance</span><span id="alNet">$0</span></div>
+        </div>
+      </div>
+
       <div class="stats-bar">
+        <div class="stat-box"><div class="num" id="totalAmount">$0</div><div class="label">Balance</div></div>
+        <div class="stat-box"><div class="num" id="totalIncome">$0</div><div class="label">Total Income</div></div>
+        <div class="stat-box"><div class="num" id="totalSpending">$0</div><div class="label">Total Spending</div></div>
         <div class="stat-box"><div class="num" id="totalRecords">0</div><div class="label">Records</div></div>
-        <div class="stat-box"><div class="num" id="totalAmount">$0</div><div class="label">Total Amount</div></div>
-        <div class="stat-box"><div class="num" id="thisYearCount">0</div><div class="label">This Year</div></div>
       </div>
 
       <div class="top-actions">
-        <button class="btn btn-primary" onclick="openRecordModal()">+ New Record</button>
+        <button class="btn btn-primary" id="addRecordBtn" onclick="openRecordModal()">+ New Record</button>
+        <button class="btn btn-success" onclick="exportMyCSV()">Export CSV</button>
         <button class="btn btn-outline" onclick="toggleView()" id="viewToggleBtn">Cards view</button>
       </div>
 
@@ -553,12 +644,13 @@
         <select id="filterCategory" onchange="renderRecords()">
           <option value="">All</option>
           <option>Invoice</option>
-          <option>Tax</option>
-          <option>Expense</option>
           <option>Revenue</option>
+          <option>Other</option>
+          <option>Expense</option>
+          <option>Spending</option>
+          <option>Tax</option>
           <option>Payroll</option>
           <option>Receipt</option>
-          <option>Other</option>
         </select>
       </div>
 
@@ -603,12 +695,13 @@
         <label>Category *</label>
         <select id="recCategory">
           <option>Invoice</option>
-          <option>Tax</option>
-          <option>Expense</option>
           <option>Revenue</option>
+          <option>Other</option>
+          <option>Expense</option>
+          <option>Spending</option>
+          <option>Tax</option>
           <option>Payroll</option>
           <option>Receipt</option>
-          <option>Other</option>
         </select>
       </div>
       <div class="form-group">
@@ -713,10 +806,17 @@
         badge.className = 'role-badge role-user';
         document.getElementById('adminNavBtn').style.display = 'none';
       }
+      var banned = !!(myUserDoc && myUserDoc.banned);
+      document.getElementById('bannedBanner').style.display = banned ? '' : 'none';
+      document.getElementById('addRecordBtn').style.display = banned ? 'none' : 'inline-block';
     }
 
     function isAdmin() {
       return myUserDoc && myUserDoc.role === 'admin';
+    }
+
+    function isBanned() {
+      return !!(myUserDoc && myUserDoc.banned);
     }
 
     function switchTab(tab) {
@@ -853,6 +953,7 @@
         allRecords.push(data);
       });
       renderAllRecords();
+      if (isAdmin()) renderAdminUsers();
     }
 
     async function loadAllUsers() {
@@ -878,12 +979,76 @@
     }
 
     // ============ MY RECORDS UI ============
+    function recValue(r) {
+      var n = parseFloat(r.amount);
+      if (isNaN(n)) return 0;
+      return n;
+    }
+
+    function isSpendingCat(cat) {
+      var spend = ['Expense', 'Spending', 'Tax', 'Payroll', 'Receipt'];
+      return spend.indexOf(cat) !== -1;
+    }
+
+    function periodTotals(records) {
+      var inc = 0, spd = 0;
+      records.forEach(function(r) {
+        var v = recValue(r);
+        if (v < 0) spd += v; else inc += v;
+      });
+      return { income: inc, spending: spd, net: inc + spd };
+    }
+
+    function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+    function dateStrOf(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+
+    function startOfWeek() {
+      var d = new Date();
+      var day = (d.getDay() + 6) % 7; // Monday = 0
+      d.setDate(d.getDate() - day);
+      return dateStrOf(d);
+    }
+
+    function startOfMonth() {
+      var d = new Date();
+      return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-01';
+    }
+
+    function inPeriod(records, startDate) {
+      return records.filter(function(r) { return r.date && r.date >= startDate; });
+    }
+
+    function fmtMoney(n) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function renderSummary() {
+      var wk = periodTotals(inPeriod(myRecords, startOfWeek()));
+      var mo = periodTotals(inPeriod(myRecords, startOfMonth()));
+      var yr = periodTotals(inPeriod(myRecords, new Date().getFullYear() + '-01-01'));
+      var al = periodTotals(myRecords);
+      document.getElementById('wkInc').textContent = fmtMoney(wk.income);
+      document.getElementById('wkSpd').textContent = fmtMoney(wk.spending);
+      document.getElementById('wkNet').textContent = fmtMoney(wk.net);
+      document.getElementById('moInc').textContent = fmtMoney(mo.income);
+      document.getElementById('moSpd').textContent = fmtMoney(mo.spending);
+      document.getElementById('moNet').textContent = fmtMoney(mo.net);
+      document.getElementById('yrInc').textContent = fmtMoney(yr.income);
+      document.getElementById('yrSpd').textContent = fmtMoney(yr.spending);
+      document.getElementById('yrNet').textContent = fmtMoney(yr.net);
+      document.getElementById('alInc').textContent = fmtMoney(al.income);
+      document.getElementById('alSpd').textContent = fmtMoney(al.spending);
+      document.getElementById('alNet').textContent = fmtMoney(al.net);
+    }
+
     function updateStats() {
       document.getElementById('totalRecords').textContent = myRecords.length;
-      var total = myRecords.reduce(function(s, r) { return s + (parseFloat(r.amount) || 0); }, 0);
-      document.getElementById('totalAmount').textContent = '$' + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      var thisYear = new Date().getFullYear();
-      document.getElementById('thisYearCount').textContent = myRecords.filter(function(r) { return r.date && r.date.indexOf(thisYear + '') === 0; }).length;
+      var t = periodTotals(myRecords);
+      document.getElementById('totalAmount').textContent = fmtMoney(t.net);
+      document.getElementById('totalIncome').textContent = fmtMoney(t.income);
+      document.getElementById('totalSpending').textContent = fmtMoney(t.spending);
+      renderSummary();
     }
 
     function getYears() {
@@ -923,7 +1088,7 @@
     }
 
     function catClass(cat) {
-      var map = { Invoice: 'cat-invoice', Tax: 'cat-tax', Expense: 'cat-expense', Revenue: 'cat-revenue', Payroll: 'cat-payroll', Receipt: 'cat-receipt' };
+      var map = { Invoice: 'cat-invoice', Tax: 'cat-tax', Expense: 'cat-expense', Revenue: 'cat-revenue', Payroll: 'cat-payroll', Receipt: 'cat-receipt', Spending: 'cat-spending' };
       return map[cat] || 'cat-other';
     }
 
@@ -945,6 +1110,11 @@
       renderRecords();
     }
 
+    function amountHtml(r) {
+      var color = recValue(r) < 0 ? '#f48fb1' : '#81c784';
+      return '<span style="font-weight:600;color:' + color + '">' + formatAmount(r.amount) + '</span>';
+    }
+
     function renderRecords() {
       renderYearChips();
       var filtered = getFilteredMyRecords();
@@ -961,7 +1131,7 @@
           html += '<tr><td>' + escapeHtml(r.date) + '</td>';
           html += '<td style="font-weight:600">' + escapeHtml(r.title) + '</td>';
           html += '<td><span class="category-badge ' + catClass(r.category) + '">' + escapeHtml(r.category) + '</span></td>';
-          html += '<td style="font-weight:600;color:#81c784">' + formatAmount(r.amount) + '</td>';
+          html += '<td>' + amountHtml(r) + '</td>';
           html += '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#888">' + escapeHtml(r.notes) + '</td>';
           html += '<td>' + (r.fileName ? '<a class="file-link" onclick="viewDetail(\'' + r.id + '\')">File</a>' : '<span style="color:#444">-</span>') + '</td>';
           html += '<td><div class="action-btns">';
@@ -977,7 +1147,7 @@
         filtered.forEach(function(r) {
           html2 += '<div class="card"><div class="card-header"><div><h3>' + escapeHtml(r.title) + '</h3><div class="date">' + escapeHtml(r.date) + '</div></div>';
           html2 += '<span class="category-badge ' + catClass(r.category) + '">' + escapeHtml(r.category) + '</span></div>';
-          html2 += '<div class="amount">' + formatAmount(r.amount) + '</div>';
+          html2 += '<div class="amount" style="color:' + (recValue(r) < 0 ? '#f48fb1' : '#81c784') + '">' + formatAmount(r.amount) + '</div>';
           if (r.notes) html2 += '<div class="notes">' + escapeHtml(r.notes) + '</div>';
           html2 += '<div class="card-footer">';
           html2 += r.fileName ? '<a class="file-link" onclick="viewDetail(\'' + r.id + '\')">File</a>' : '<span></span>';
@@ -992,6 +1162,7 @@
 
     // ============ RECORD CRUD ============
     function openRecordModal(id) {
+      if (isBanned()) { alert('Your account is suspended. You cannot add or change records.'); return; }
       editingRecordId = id || null;
       document.getElementById('recordModalTitle').textContent = id ? 'Edit Record' : 'Add New Record';
       document.getElementById('recFile').value = '';
@@ -1029,6 +1200,7 @@
     }
 
     async function saveRecord() {
+      if (isBanned()) { alert('Your account is suspended. You cannot add or change records.'); return; }
       var title = document.getElementById('recTitle').value.trim();
       var date = document.getElementById('recDate').value;
       var category = document.getElementById('recCategory').value;
@@ -1039,13 +1211,20 @@
       if (!title) { alert('Title is required.'); return; }
       if (!date) { alert('Date is required.'); return; }
 
+      // Spending categories are stored as negative (debt/balance math)
+      var num = parseFloat(amount);
+      var storedAmount = '';
+      if (!isNaN(num)) {
+        storedAmount = isSpendingCat(category) ? ('-' + Math.abs(num)) : String(Math.abs(num));
+      }
+
       setBtnBusy('saveRecordBtn', true, 'Saving...');
       try {
         var data = {
           title: title,
           date: date,
           category: category,
-          amount: amount,
+          amount: storedAmount,
           notes: notes,
           ownerUid: currentUser.uid
         };
@@ -1084,11 +1263,32 @@
     }
 
     async function deleteRecord(id, isAdminDeletion) {
+      if (!isAdminDeletion && isBanned()) { alert('Your account is suspended. You cannot change records.'); return; }
       if (!confirm('Delete this record?')) return;
       try {
         await db.collection('records').doc(id).delete();
         if (isAdminDeletion) await loadAllData(); else await loadMyRecords();
       } catch (e) { alert('Delete failed: ' + e.message); }
+    }
+
+    function exportMyCSV() {
+      if (!myRecords.length) { alert('Nothing to export yet.'); return; }
+      var csv = 'Title,Date,Category,Amount,Notes,File\n';
+      myRecords.forEach(function(r) {
+        csv += '"' + (r.title || '').replace(/"/g, '""') + '",';
+        csv += '"' + (r.date || '') + '",';
+        csv += '"' + (r.category || '') + '",';
+        csv += '"' + (r.amount != null ? r.amount : '') + '",';
+        csv += '"' + (r.notes || '').replace(/"/g, '""') + '",';
+        csv += '"' + (r.fileName || '') + '"\n';
+      });
+      var blob = new Blob([csv], { type: 'text/csv' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'my-accounting-records-' + new Date().toISOString().split('T')[0] + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
     }
 
     // ============ DETAIL VIEW ============
@@ -1198,29 +1398,43 @@
 
     function adminUserStats() {
       var countMap = {};
+      var balMap = {};
       allRecords.forEach(function(r) {
         countMap[r.ownerUid] = (countMap[r.ownerUid] || 0) + 1;
+        balMap[r.ownerUid] = (balMap[r.ownerUid] || 0) + (recValue(r) || 0);
       });
-      allUsers.forEach(function(u) { u.memberCount = countMap[u.uid] || 0; });
+      allUsers.forEach(function(u) {
+        u.memberCount = countMap[u.uid] || 0;
+        u.balance = balMap[u.uid] || 0;
+      });
     }
 
     function renderAdminUsers() {
       if (!isAdmin()) return;
       adminUserStats();
       var container = document.getElementById('usersContainer');
-      var html = '<div class="table-wrapper"><table><thead><tr><th>Email</th><th>Name</th><th>Role</th><th>Records</th><th>Actions</th></tr></thead><tbody>';
+      var html = '<div class="table-wrapper"><table><thead><tr><th>Email</th><th>Name</th><th>Role</th><th>Status</th><th>Records</th><th>Balance</th><th>Actions</th></tr></thead><tbody>';
       allUsers.forEach(function(u) {
         html += '<tr>';
         html += '<td style="font-weight:600">' + escapeHtml(u.email) + '</td>';
         html += '<td style="color:#aaa">' + escapeHtml(u.displayName || '-') + '</td>';
         html += '<td>' + (u.role === 'admin' ? '<span class="badge badge-green">Admin</span>' : '<span class="badge badge-gray">User</span>') + '</td>';
+        html += '<td>' + (u.banned ? '<span class="badge badge-red">Banned</span>' : '<span class="badge badge-green">Active</span>') + '</td>';
         html += '<td>' + u.memberCount + '</td>';
+        html += '<td style="font-weight:600;color:' + (u.balance < 0 ? '#f48fb1' : '#81c784') + '">' + fmtMoney(u.balance) + '</td>';
         html += '<td><div class="action-btns">';
         html += '<button onclick="openUserModal(\'' + u.uid + '\')" title="Manage">Manage</button>';
         if (u.role === 'admin' && u.uid !== currentUser.uid) {
           html += '<button onclick="adminToggleRole(\'' + u.uid + '\')" title="Demote">Demote</button>';
         } else if (u.role !== 'admin') {
           html += '<button onclick="adminToggleRole(\'' + u.uid + '\')" title="Make admin">Promote</button>';
+        }
+        if (u.uid !== currentUser.uid) {
+          if (u.banned) {
+            html += '<button onclick="adminToggleBan(\'' + u.uid + '\')" title="Reactivate" style="color:#81c784">Unban</button>';
+          } else {
+            html += '<button onclick="adminToggleBan(\'' + u.uid + '\')" title="Ban user" style="color:#e57373">Ban</button>';
+          }
         }
         html += '</div></td></tr>';
       });
@@ -1236,7 +1450,9 @@
       html += '<p style="margin-bottom:6px"><strong>Email:</strong> ' + escapeHtml(u.email) + '</p>';
       html += '<p style="margin-bottom:6px"><strong>Name:</strong> ' + escapeHtml(u.displayName || '-') + '</p>';
       html += '<p style="margin-bottom:6px"><strong>Role:</strong> ' + (u.role === 'admin' ? 'Admin' : 'User') + '</p>';
+      html += '<p style="margin-bottom:6px"><strong>Status:</strong> ' + (u.banned ? '<span class="badge badge-red">Banned</span>' : '<span class="badge badge-green">Active</span>') + '</p>';
       html += '<p style="margin-bottom:6px"><strong>Records:</strong> ' + u.memberCount + '</p>';
+      html += '<p style="margin-bottom:6px"><strong>Balance:</strong> ' + fmtMoney(u.balance) + (u.balance < 0 ? ' <span style="color:#f48fb1">(has debt)</span>' : '') + '</p>';
       html += '</div>';
       document.getElementById('userDetailContent').innerHTML = html;
       var delBtn = document.getElementById('adminDeleteUserBtn');
@@ -1256,6 +1472,20 @@
       if (!confirm('Change role of ' + u.email + ' to ' + newRole + '?')) return;
       try {
         await db.collection('users').doc(uid).update({ role: newRole });
+        await loadAllUsers();
+      } catch (e) { alert('Failed: ' + e.message); }
+    }
+
+    async function adminToggleBan(uid) {
+      var u = getUserByUid(uid);
+      if (!u) return;
+      if (!u.banned) {
+        if (!confirm('Ban ' + u.email + '?\n\nThey can still log in and view/export their old data, but CANNOT add or change records.\n\nYou can unban them anytime.')) return;
+      } else {
+        if (!confirm('Reactivate ' + u.email + '? They can add records again.')) return;
+      }
+      try {
+        await db.collection('users').doc(uid).update({ banned: !u.banned });
         await loadAllUsers();
       } catch (e) { alert('Failed: ' + e.message); }
     }
