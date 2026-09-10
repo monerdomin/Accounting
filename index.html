@@ -806,6 +806,10 @@
     var auth = firebase.auth();
     var db = firebase.firestore();
 
+    // Tokens only live for the tab session (no localStorage persistence) to reduce
+    // session-hijack risk from stored credentials.
+    auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+
     // ============ STATE ============
     var currentUser = null;       // Firebase user object
     var myUserDoc = null;         // users collection doc ({role, displayName})
@@ -1159,7 +1163,7 @@
       if (!years.length) { container.innerHTML = ''; return; }
       var html = '<button class="year-chip ' + (selectedYear === '' ? 'active' : '') + '" onclick="selectYear(\'\', false)">All Years</button>';
       years.forEach(function(y) {
-        html += '<button class="year-chip ' + (selectedYear === y ? 'active' : '') + '" onclick="selectYear(\'' + y + '\', false)">' + y + '</button>';
+        html += '<button class="year-chip ' + (selectedYear === y ? 'active' : '') + '" onclick="selectYear(\'' + jsStr(y) + '\', false)">' + escapeHtml(y) + '</button>';
       });
       container.innerHTML = html;
     }
@@ -1200,6 +1204,18 @@
       return div.innerHTML;
     }
 
+    // Escapes a value for use inside a JS string literal embedded in an HTML attribute
+    // (onclick="fn('...')"). Neutralizes backslash + quotes so crafted doc IDs/emails
+    // cannot break out of the attribute or the string.
+    function jsStr(s) {
+      s = s == null ? '' : String(s);
+      return s.replace(/\\/g, '\\u005c')
+              .replace(/'/g, '\\u0027')
+              .replace(/"/g, '&#34;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;');
+    }
+
     function toggleView() {
       currentView = currentView === 'table' ? 'cards' : 'table';
       document.getElementById('viewToggleBtn').textContent = currentView === 'table' ? 'Cards view' : 'Table view';
@@ -1229,11 +1245,11 @@
           html += '<td><span class="category-badge ' + catClass(r.category) + '">' + escapeHtml(r.category) + '</span></td>';
           html += '<td>' + amountHtml(r) + '</td>';
           html += '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#888">' + escapeHtml(r.notes) + '</td>';
-          html += '<td>' + (r.fileName ? '<a class="file-link" onclick="viewDetail(\'' + r.id + '\')">File</a>' : '<span style="color:#444">-</span>') + '</td>';
+          html += '<td>' + (r.fileName ? '<a class="file-link" onclick="viewDetail(\'' + jsStr(r.id) + '\')">File</a>' : '<span style="color:#444">-</span>') + '</td>';
           html += '<td><div class="action-btns">';
-          html += '<button onclick="viewDetail(\'' + r.id + '\')" title="View">View</button>';
-          html += '<button onclick="openRecordModal(\'' + r.id + '\')" title="Edit">Edit</button>';
-          html += '<button onclick="deleteRecord(\'' + r.id + '\')" title="Delete">Del</button>';
+          html += '<button onclick="viewDetail(\'' + jsStr(r.id) + '\')" title="View">View</button>';
+          html += '<button onclick="openRecordModal(\'' + jsStr(r.id) + '\')" title="Edit">Edit</button>';
+          html += '<button onclick="deleteRecord(\'' + jsStr(r.id) + '\')" title="Delete">Del</button>';
           html += '</div></td></tr>';
         });
         html += '</tbody></table></div>';
@@ -1246,10 +1262,10 @@
           html2 += '<div class="amount" style="color:' + (recValue(r) < 0 ? '#f48fb1' : '#81c784') + '">' + formatAmount(r.amount) + '</div>';
           if (r.notes) html2 += '<div class="notes">' + escapeHtml(r.notes) + '</div>';
           html2 += '<div class="card-footer">';
-          html2 += r.fileName ? '<a class="file-link" onclick="viewDetail(\'' + r.id + '\')">File</a>' : '<span></span>';
-          html2 += '<div class="action-btns"><button onclick="viewDetail(\'' + r.id + '\')">View</button>';
-          html2 += '<button onclick="openRecordModal(\'' + r.id + '\')">Edit</button>';
-          html2 += '<button onclick="deleteRecord(\'' + r.id + '\')">Del</button></div></div></div>';
+          html2 += r.fileName ? '<a class="file-link" onclick="viewDetail(\'' + jsStr(r.id) + '\')">File</a>' : '<span></span>';
+          html2 += '<div class="action-btns"><button onclick="viewDetail(\'' + jsStr(r.id) + '\')">View</button>';
+          html2 += '<button onclick="openRecordModal(\'' + jsStr(r.id) + '\')">Edit</button>';
+          html2 += '<button onclick="deleteRecord(\'' + jsStr(r.id) + '\')">Del</button></div></div></div>';
         });
         html2 += '</div>';
         container.innerHTML = html2;
@@ -1399,11 +1415,11 @@
       if (r.notes) html += '<p style="margin-bottom:6px"><strong>Notes:</strong> ' + escapeHtml(r.notes) + '</p>';
       if (r.fileName) {
         html += '<p style="margin-bottom:6px"><strong>File:</strong> ' + escapeHtml(r.fileName) + '</p>';
-        if (r.fileData) {
+        if (r.fileData && r.fileData.indexOf('data:') === 0) {
           if (r.fileData.indexOf('data:image') === 0) {
-            html += '<div style="margin-top:10px"><img src="' + r.fileData + '" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>';
+            html += '<div style="margin-top:10px"><img src="' + escapeHtml(r.fileData) + '" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>';
           }
-          html += '<p style="margin-top:10px"><a class="file-link" style="font-size:15px" href="' + r.fileData + '" download="' + escapeHtml(r.fileName) + '">Download File</a></p>';
+          html += '<p style="margin-top:10px"><a class="file-link" style="font-size:15px" href="' + escapeHtml(r.fileData) + '" download="' + escapeHtml(r.fileName) + '">Download File</a></p>';
         }
       }
       html += '</div>';
@@ -1434,7 +1450,7 @@
       var sel = document.getElementById('adminUserFilter');
       var html = '<option value="">All users</option>';
       allUsers.forEach(function(u) {
-        html += '<option value="' + u.uid + '">' + escapeHtml(u.email) + '</option>';
+        html += '<option value="' + escapeHtml(u.uid) + '">' + escapeHtml(u.email) + '</option>';
       });
       sel.innerHTML = html;
     }
@@ -1460,7 +1476,7 @@
       var html = '<div class="year-chips">';
       html += '<button class="year-chip ' + (selectedYear === '' ? 'active' : '') + '" onclick="selectYear(\'\', true)">All Years</button>';
       years.forEach(function(y) {
-        html += '<button class="year-chip ' + (selectedYear === y ? 'active' : '') + '" onclick="selectYear(\'' + y + '\', true)">' + y + '</button>';
+        html += '<button class="year-chip ' + (selectedYear === y ? 'active' : '') + '" onclick="selectYear(\'' + jsStr(y) + '\', true)">' + escapeHtml(y) + '</button>';
       });
       html += '</div>';
       return html;
@@ -1484,8 +1500,8 @@
         html += '<td><span class="category-badge ' + catClass(r.category) + '">' + escapeHtml(r.category) + '</span></td>';
         html += '<td style="font-weight:600;color:#81c784">' + formatAmount(r.amount) + '</td>';
         html += '<td><div class="action-btns">';
-        html += '<button onclick="viewDetail(\'' + r.id + '\')" title="View">View</button>';
-        html += '<button onclick="deleteRecord(\'' + r.id + '\', true)" title="Delete">Del</button>';
+        html += '<button onclick="viewDetail(\'' + jsStr(r.id) + '\')" title="View">View</button>';
+        html += '<button onclick="deleteRecord(\'' + jsStr(r.id) + '\', true)" title="Delete">Del</button>';
         html += '</div></td></tr>';
       });
       html += '</tbody></table></div>';
@@ -1519,17 +1535,17 @@
         html += '<td>' + u.memberCount + '</td>';
         html += '<td style="font-weight:600;color:' + (u.balance < 0 ? '#f48fb1' : '#81c784') + '">' + fmtMoney(u.balance) + '</td>';
         html += '<td><div class="action-btns">';
-        html += '<button onclick="openUserModal(\'' + u.uid + '\')" title="Manage">Manage</button>';
+        html += '<button onclick="openUserModal(\'' + jsStr(u.uid) + '\')" title="Manage">Manage</button>';
         if (u.role === 'admin' && u.uid !== currentUser.uid) {
-          html += '<button onclick="adminToggleRole(\'' + u.uid + '\')" title="Demote">Demote</button>';
+          html += '<button onclick="adminToggleRole(\'' + jsStr(u.uid) + '\')" title="Demote">Demote</button>';
         } else if (u.role !== 'admin') {
-          html += '<button onclick="adminToggleRole(\'' + u.uid + '\')" title="Make admin">Promote</button>';
+          html += '<button onclick="adminToggleRole(\'' + jsStr(u.uid) + '\')" title="Make admin">Promote</button>';
         }
         if (u.uid !== currentUser.uid) {
           if (u.banned) {
-            html += '<button onclick="adminToggleBan(\'' + u.uid + '\')" title="Reactivate" style="color:#81c784">Unban</button>';
+            html += '<button onclick="adminToggleBan(\'' + jsStr(u.uid) + '\')" title="Reactivate" style="color:#81c784">Unban</button>';
           } else {
-            html += '<button onclick="adminToggleBan(\'' + u.uid + '\')" title="Ban user" style="color:#e57373">Ban</button>';
+            html += '<button onclick="adminToggleBan(\'' + jsStr(u.uid) + '\')" title="Ban user" style="color:#e57373">Ban</button>';
           }
         }
         html += '</div></td></tr>';
