@@ -198,6 +198,55 @@
 
     .user-chip .email { font-size: 13px; color: #ccc; }
 
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #4fc3f7;
+    }
+    .avatar-letter {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #1b3a4b;
+      color: #4fc3f7;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .avatar-big {
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      background-color: #1b3a4b;
+      background-size: cover;
+      background-position: center;
+      color: #4fc3f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .profile-avatar-row { display: flex; gap: 18px; align-items: center; margin-bottom: 18px; }
+    .profile-msg { font-size: 13px; margin-bottom: 12px; display: block; min-height: 18px; }
+    .btn-profile {
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid #4fc3f7;
+      color: #4fc3f7;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-profile:hover { background: #4fc3f7; color: #0f1117; }
+
     .currency-bar {
       display: flex;
       align-items: center;
@@ -657,9 +706,12 @@
       <h1>My <span>Accounting</span> Records</h1>
       <div class="user-info">
         <div class="user-chip">
+          <img class="avatar" id="userAvatar" style="display:none" alt="">
+          <span class="avatar-letter" id="avatarLetter">?</span>
           <span class="email" id="userEmail"></span>
           <span class="role-badge" id="userRoleBadge">User</span>
         </div>
+        <button class="btn-profile" onclick="openProfileModal()">Profile</button>
         <button class="btn-logout" onclick="handleLogout()">Logout</button>
       </div>
       <div class="currency-bar">
@@ -855,6 +907,51 @@
     </div>
   </div>
 
+  <!-- ===================== PROFILE MODAL ===================== -->
+  <div class="modal-overlay" id="profileModalOverlay" onclick="closeOverlay(event, 'profileModalOverlay')">
+    <div class="modal">
+      <h2>My Profile</h2>
+      <span class="profile-msg" id="profileMsg"></span>
+
+      <div class="profile-avatar-row">
+        <div class="avatar-big" id="profileAvatarBig">?</div>
+        <div>
+          <label class="btn btn-outline" style="display:inline-block;cursor:pointer">Change Photo
+            <input type="file" id="profilePhotoInput" accept="image/*" style="display:none" onchange="handlePhotoChange(event)">
+          </label>
+          <div class="inline-note">Small square image (auto-resized to 200px).</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Your Name</label>
+        <input type="text" id="profileName" placeholder="John Doe">
+      </div>
+      <button class="btn btn-primary btn-block" id="saveProfileBtn" onclick="saveProfile()">Save Name &amp; Photo</button>
+
+      <hr style="border-color:#222;border-style:solid;margin:20px 0">
+
+      <h3 style="color:#4fc3f7;font-size:15px;margin-bottom:14px">Change Password</h3>
+      <div class="form-group">
+        <label>Current Password</label>
+        <input type="password" id="curPass" autocomplete="current-password">
+      </div>
+      <div class="form-group">
+        <label>New Password</label>
+        <input type="password" id="newPass" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>Confirm New Password</label>
+        <input type="password" id="newPass2" autocomplete="new-password">
+      </div>
+      <button class="btn btn-primary btn-block" id="changePassBtn" onclick="changePassword()">Change Password</button>
+
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeModal('profileModalOverlay')">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ============ FIREBASE CONFIG (paste your keys here) ============
     var firebaseConfig = {
@@ -888,6 +985,7 @@
     var adminTargetUid = null;
     var currency = 'USD';         // display currency: 'USD' or 'SYP'
     var liveRate = null;          // {buy, sell, ts} USD->SYP live rate
+    var pendingPhoto = null;      // new avatar dataURL before saving
 
     // ============ AUTH FLOW ============
     auth.onAuthStateChanged(async function(user) {
@@ -896,6 +994,7 @@
         await loadMyUser();
         showApp();
         await refreshAllData();
+        renderAvatars();
         fetchLiveRate();
         setInterval(fetchLiveRate, 15 * 60 * 1000);
       } else {
@@ -1297,6 +1396,135 @@
       var buy = num(m[1]), sell = num(m[2]);
       if (!buy || !sell) return null;
       return { buy: buy, sell: sell, ts: Date.now() };
+    }
+
+    // ============ PROFILE (name, photo, password) ============
+    function openProfileModal() {
+      document.getElementById('profileName').value = (myUserDoc && myUserDoc.displayName) || (currentUser.displayName || '');
+      document.getElementById('curPass').value = '';
+      document.getElementById('newPass').value = '';
+      document.getElementById('newPass2').value = '';
+      pendingPhoto = null;
+      document.getElementById('profilePhotoInput').value = '';
+      showProfileMsg('', false);
+      renderProfileAvatar();
+      openModal('profileModalOverlay');
+    }
+
+    function renderAvatars() {
+      var img = document.getElementById('userAvatar');
+      var letter = document.getElementById('avatarLetter');
+      var photo = myUserDoc && myUserDoc.photoData ? myUserDoc.photoData : null;
+      var name = (myUserDoc && myUserDoc.displayName) || (currentUser && currentUser.displayName) || '';
+      var initial = (name || '?').trim().charAt(0).toUpperCase() || '?';
+      if (img) {
+        img.style.display = photo ? '' : 'none';
+        if (photo) img.src = photo;
+      }
+      if (letter) {
+        letter.textContent = initial;
+        letter.style.display = photo ? 'none' : '';
+      }
+    }
+
+    function renderProfileAvatar() {
+      var big = document.getElementById('profileAvatarBig');
+      var photo = myUserDoc && myUserDoc.photoData ? myUserDoc.photoData : null;
+      var name = (myUserDoc && myUserDoc.displayName) || (currentUser && currentUser.displayName) || '';
+      var initial = (name || '?').trim().charAt(0).toUpperCase() || '?';
+      if (photo) {
+        big.style.backgroundImage = "url('" + photo + "')";
+        big.textContent = '';
+      } else {
+        big.style.backgroundImage = '';
+        big.textContent = initial;
+      }
+    }
+
+    function handlePhotoChange(ev) {
+      var file = ev.target.files[0];
+      if (!file) return;
+      if (!/^image\//.test(file.type)) { showProfileMsg('Please choose an image file.', true); return; }
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var imgEl = new Image();
+        imgEl.onload = function() {
+          var canvas = document.createElement('canvas');
+          var MAX = 200;
+          var scale = Math.min(1, MAX / Math.max(imgEl.width, imgEl.height));
+          canvas.width = Math.round(imgEl.width * scale);
+          canvas.height = Math.round(imgEl.height * scale);
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(imgEl, 0, 0, canvas.width, canvas.height);
+          pendingPhoto = canvas.toDataURL('image/jpeg', 0.85);
+          var big = document.getElementById('profileAvatarBig');
+          big.style.backgroundImage = "url('" + pendingPhoto + "')";
+          big.textContent = '';
+        };
+        imgEl.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function showProfileMsg(msg, isErr) {
+      var el = document.getElementById('profileMsg');
+      el.textContent = msg;
+      el.style.color = isErr ? '#f48fb1' : '#81c784';
+    }
+
+    async function saveProfile() {
+      var name = document.getElementById('profileName').value.trim();
+      if (!name) { showProfileMsg('Name cannot be empty.', true); return; }
+      var nameChanged = name !== currentUser.displayName;
+      var photoChanged = pendingPhoto !== null && pendingPhoto !== (myUserDoc && myUserDoc.photoData);
+      if (!nameChanged && !photoChanged) { showProfileMsg('No changes to save.', true); return; }
+      setBtnBusy('saveProfileBtn', true, 'Saving...');
+      try {
+        if (nameChanged) await currentUser.updateProfile({ displayName: name });
+        var payload = {};
+        if (nameChanged) payload.displayName = name;
+        if (photoChanged) payload.photoData = pendingPhoto;
+        await db.collection('users').doc(currentUser.uid).set(payload, { merge: true });
+        await loadMyUser();
+        renderAvatars();
+        renderAllAvatarRows();
+        if (isAdmin()) await loadAllData();
+        showProfileMsg('Profile updated.', false);
+        pendingPhoto = null;
+      } catch (e) {
+        showProfileMsg('Save failed: ' + e.message, true);
+      }
+      setBtnBusy('saveProfileBtn', false, 'Save Name & Photo');
+    }
+
+    async function changePassword() {
+      var cur = document.getElementById('curPass').value;
+      var np = document.getElementById('newPass').value;
+      var np2 = document.getElementById('newPass2').value;
+      if (!cur) { showProfileMsg('Enter your current password.', true); return; }
+      if (np.length < 6) { showProfileMsg('New password must be at least 6 characters.', true); return; }
+      if (np !== np2) { showProfileMsg('New passwords do not match.', true); return; }
+      setBtnBusy('changePassBtn', true, 'Updating...');
+      try {
+        var cred = firebase.auth.EmailAuthProvider.credential(currentUser.email, cur);
+        await currentUser.reauthenticateWithCredential(cred);
+        await currentUser.updatePassword(np);
+        showProfileMsg('Password changed successfully.', false);
+        document.getElementById('curPass').value = '';
+        document.getElementById('newPass').value = '';
+        document.getElementById('newPass2').value = '';
+      } catch (e) {
+        var code = e.code || '';
+        var msg = (code.indexOf('wrong-password') !== -1 || code.indexOf('invalid-credential') !== -1 || code.indexOf('invalid-login') !== -1)
+          ? 'Current password is incorrect.' : ('Failed: ' + (e.message || 'Please try again.'));
+        showProfileMsg(msg, true);
+      }
+      setBtnBusy('changePassBtn', false, 'Change Password');
+    }
+
+    function renderAllAvatarRows() {
+      if (!isAdmin()) return;
+      renderAdminUsers();
     }
 
     function renderSummary() {
