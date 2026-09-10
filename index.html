@@ -511,7 +511,7 @@
         <button class="btn btn-primary btn-block" id="signupBtn" onclick="handleSignup()">Create Account</button>
       </div>
 
-      <div class="auth-footer">First account created = Admin. Later accounts = User.</div>
+      <div class="auth-footer">New accounts start as Users. The Admin can promote them in the Admin Panel.</div>
     </div>
   </div>
 
@@ -768,14 +768,10 @@
         var cred = await auth.createUserWithEmailAndPassword(email, pass);
         await cred.user.updateProfile({ displayName: name });
 
-        // First user in the system becomes Admin
-        var anyUser = await db.collection('users').limit(1).get();
-        var role = (anyUser.size === 0) ? 'admin' : 'user';
-
         await db.collection('users').doc(cred.user.uid).set({
           email: email,
           displayName: name,
-          role: role,
+          role: 'user',
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         // auth.onAuthStateChanged will take over now
