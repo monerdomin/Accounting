@@ -9,7 +9,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+  
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -620,7 +620,7 @@
         <textarea id="recNotes" placeholder="Any notes about this record..."></textarea>
       </div>
       <div class="form-group">
-        <label id="fileLabel">Attach File (saved to Firebase Storage)</label>
+        <label id="fileLabel">Attach File (max 600KB)</label>
         <input type="file" id="recFile">
         <div class="inline-note" id="existingFileNote"></div>
       </div>
@@ -670,7 +670,6 @@
     firebase.initializeApp(firebaseConfig);
     var auth = firebase.auth();
     var db = firebase.firestore();
-    var storage = firebase.storage();
 
     // ============ STATE ============
     var currentUser = null;       // Firebase user object
@@ -1022,7 +1021,7 @@
           document.getElementById('fileLabel').textContent = 'Replace File (currently: ' + r.fileName + ')';
           document.getElementById('existingFileNote').textContent = 'Current file attached. Choose a new one to replace it, or leave empty to keep it.';
         } else {
-          document.getElementById('fileLabel').textContent = 'Attach File (saved to Firebase Storage)';
+          document.getElementById('fileLabel').textContent = 'Attach File (max 600KB)';
         }
       }
       openModal('recordModalOverlay');
@@ -1057,9 +1056,18 @@
 
         if (fileInput.files.length > 0) {
           var file = fileInput.files[0];
-          var ref = storage.ref('uploads/' + currentUser.uid + '/' + Date.now() + '_' + file.name);
-          await ref.put(file);
-          data.fileUrl = await ref.getDownloadURL();
+          if (file.size > 600 * 1024) {
+            alert('File too large. Maximum is 600KB (free plan limit). Please use a smaller file.');
+            setBtnBusy('saveRecordBtn', false, 'Save Record');
+            return;
+          }
+          var reader = new FileReader();
+          var base64 = await new Promise(function(resolve, reject) {
+            reader.onload = function() { resolve(reader.result); };
+            reader.onerror = function() { reject(new Error('Could not read file.')); };
+            reader.readAsDataURL(file);
+          });
+          data.fileData = base64;
           data.fileName = file.name;
         }
 
@@ -1099,11 +1107,11 @@
       if (r.notes) html += '<p style="margin-bottom:6px"><strong>Notes:</strong> ' + escapeHtml(r.notes) + '</p>';
       if (r.fileName) {
         html += '<p style="margin-bottom:6px"><strong>File:</strong> ' + escapeHtml(r.fileName) + '</p>';
-        if (r.fileUrl) {
-          if (/\.(png|jpe?g|gif|webp|bmp)(\?.*)?$/i.test(r.fileName)) {
-            html += '<div style="margin-top:10px"><img src="' + r.fileUrl + '" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>';
+        if (r.fileData) {
+          if (r.fileData.indexOf('data:image') === 0) {
+            html += '<div style="margin-top:10px"><img src="' + r.fileData + '" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>';
           }
-          html += '<p style="margin-top:10px"><a class="file-link" style="font-size:15px" href="' + r.fileUrl + '" target="_blank" rel="noopener">Open File</a></p>';
+          html += '<p style="margin-top:10px"><a class="file-link" style="font-size:15px" href="' + r.fileData + '" download="' + escapeHtml(r.fileName) + '">Download File</a></p>';
         }
       }
       html += '</div>';
@@ -1268,19 +1276,12 @@
         recSnap.forEach(function(doc) { batch.delete(doc.ref); });
         await batch.commit();
 
-        // delete their files from storage
-        try {
-          var list = await storage.ref('uploads/' + uid).listAll();
-          var delPromises = list.items.map(function(item) { return item.delete(); });
-          await Promise.all(delPromises);
-        } catch (se) { /* folder may not exist */ }
-
         var emailForNote = u.email;
 
         // Delete Firestore user doc. (Auth login deletion needs Admin SDK/Console.)
         await db.collection('users').doc(uid).delete();
 
-        alert('User records and files deleted from Firestore/Storage.\n\nNote: To fully delete the login account, go to Firebase Console > Authentication > ' + emailForNote + ' > Delete.');
+        alert('User records deleted from Firestore.\n\nNote: To fully delete the login account, go to Firebase Console > Authentication > ' + emailForNote + ' > Delete.');
         closeModal('userModalOverlay');
         await loadAllData();
       } catch (e) {
