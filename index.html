@@ -872,6 +872,7 @@
           email: email,
           displayName: name,
           role: 'user',
+          banned: false,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         // auth.onAuthStateChanged will take over now
