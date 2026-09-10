@@ -894,12 +894,12 @@
         await auth.sendPasswordResetEmail(email);
         document.getElementById('forgotEmail').value = '';
         backToLogin();
-        showSuccess('If an account exists for this email, a reset link has been sent. Check your inbox and spam folder.');
+        showSuccess('Password reset email sent! Please go to your email and check your inbox AND spam box.');
       } catch (e) {
         if (e.code && e.code.indexOf('auth/invalid-email') === 0) {
           showError('Please enter a valid email address.');
         } else {
-          showSuccess('If an account exists for this email, a reset link has been sent. Check your inbox and spam folder.');
+          showSuccess('Password reset email sent! Please go to your email and check your inbox AND spam box.');
           backToLogin();
         }
       }
