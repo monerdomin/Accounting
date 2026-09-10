@@ -645,12 +645,21 @@
           <option value="">All</option>
           <option>Invoice</option>
           <option>Revenue</option>
+          <option>Income</option>
+          <option>Salary</option>
           <option>Other</option>
           <option>Expense</option>
           <option>Spending</option>
+          <option>Rent</option>
+          <option>Utilities</option>
+          <option>Food</option>
+          <option>Transport</option>
+          <option>Equipment</option>
+          <option>Materials</option>
           <option>Tax</option>
           <option>Payroll</option>
           <option>Receipt</option>
+          <option>Debit</option>
         </select>
       </div>
 
@@ -696,12 +705,21 @@
         <select id="recCategory">
           <option>Invoice</option>
           <option>Revenue</option>
+          <option>Income</option>
+          <option>Salary</option>
           <option>Other</option>
           <option>Expense</option>
           <option>Spending</option>
+          <option>Rent</option>
+          <option>Utilities</option>
+          <option>Food</option>
+          <option>Transport</option>
+          <option>Equipment</option>
+          <option>Materials</option>
           <option>Tax</option>
           <option>Payroll</option>
           <option>Receipt</option>
+          <option>Debit</option>
         </select>
       </div>
       <div class="form-group">
@@ -994,9 +1012,9 @@
       return n;
     }
 
-    function isSpendingCat(cat) {
-      var spend = ['Expense', 'Spending', 'Tax', 'Payroll', 'Receipt'];
-      return spend.indexOf(cat) !== -1;
+    function isIncomeCat(cat) {
+      var income = ['Invoice', 'Revenue', 'Other', 'Income', 'Salary'];
+      return income.indexOf(cat) !== -1;
     }
 
     function periodTotals(records) {
@@ -1220,11 +1238,11 @@
       if (!title) { alert('Title is required.'); return; }
       if (!date) { alert('Date is required.'); return; }
 
-      // Spending categories are stored as negative (debt/balance math)
+      // Anything that is not an income category is a spending/debit and is stored negative
       var num = parseFloat(amount);
       var storedAmount = '';
       if (!isNaN(num)) {
-        storedAmount = isSpendingCat(category) ? ('-' + Math.abs(num)) : String(Math.abs(num));
+        storedAmount = isIncomeCat(category) ? String(Math.abs(num)) : ('-' + Math.abs(num));
       }
 
       setBtnBusy('saveRecordBtn', true, 'Saving...');
