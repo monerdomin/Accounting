@@ -301,6 +301,22 @@
       padding: 0;
     }
     .rate-refresh:hover { color: #4fc3f7; border-color: #4fc3f7; }
+    .cash-card {
+      background: #161a24;
+      border: 1px solid #2c3a4c;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+    .cash-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .cash-name { font-weight: 600; color: #eee; }
+    .cash-value { font-size: 22px; font-weight: 700; color: #81c784; margin-top: 6px; }
+    .cash-usd { font-size: 13px; color: #aaa; margin-top: 2px; }
+    .cash-meta { font-size: 12px; color: #888; margin-top: 4px; }
+    .badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; text-transform: capitalize; }
+    .badge-ok { background: #1e3a2a; color: #81c784; }
+    .badge-bad { background: #3a1e22; color: #f48fb1; }
+    .muted { color: #aaa; font-size: 14px; }
     .role-badge {
       font-size: 11px;
       font-weight: 700;
@@ -729,6 +745,7 @@
 
     <div class="nav-tabs">
       <button id="myNavBtn" class="active" onclick="switchPanel('records')">My Records</button>
+      <button id="cashNavBtn" onclick="switchPanel('cash')">My Cash</button>
       <button id="adminNavBtn" style="display:none" onclick="switchPanel('admin')">Admin Panel</button>
     </div>
 
@@ -826,6 +843,16 @@
         </select>
       </div>
       <div id="allRecordsContainer"><div class="loading">Loading records...</div></div>
+    </div>
+
+    <!-- ===================== MY CASH PANEL (ShamCash) ===================== -->
+    <div id="cashPanel" class="container" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h2 style="color:#4fc3f7;margin:0">My Cash</h2>
+        <button class="btn btn-primary" id="cashRefreshBtn" onclick="loadShamCash(true)">Refresh</button>
+      </div>
+      <div id="cashStatus" class="loading">Loading your ShamCash balance...</div>
+      <div id="cashAccounts"></div>
     </div>
   </div>
 
@@ -928,6 +955,11 @@
         <label>Your Name</label>
         <input type="text" id="profileName" placeholder="John Doe">
       </div>
+      <div class="form-group">
+        <label>ShamCash API Token <span style="color:#777;font-weight:400">(optional, to see your balance in My Cash)</span></label>
+        <input type="text" id="profileShamToken" placeholder="Paste token from shamcash-api.com/dashboard" autocomplete="off" spellcheck="false" style="font-family:monospace">
+        <div class="inline-note">Sent only to our secure proxy; never to the browser's stored pages.</div>
+      </div>
       <button class="btn btn-primary btn-block" id="saveProfileBtn" onclick="saveProfile()">Save Name &amp; Photo</button>
 
       <hr style="border-color:#222;border-style:solid;margin:20px 0">
@@ -975,6 +1007,9 @@
       measurementId: "G-WF1E26M0CZ"
     };
     // ================================================================
+    // ShamCash proxy: replace with your deployed Netlify site URL
+    var SHAMCASH_PROXY = 'https://YOUR-SITE.netlify.app/.netlify/functions/shamcash';
+    // ================================================================
 
     firebase.initializeApp(firebaseConfig);
     var auth = firebase.auth();
@@ -997,6 +1032,8 @@
     var currency = 'USD';         // display currency: 'USD' or 'SYP'
     var liveRate = null;          // {buy, sell, ts} USD->SYP live rate
     var pendingPhoto = null;      // new avatar dataURL before saving
+    var cashData = null;          // cached ShamCash balance payload
+    var cashLoadedAt = 0;
 
     // ============ AUTH FLOW ============
     auth.onAuthStateChanged(async function(user) {
@@ -1259,10 +1296,15 @@
     // ============ NAVIGATION ============
     function switchPanel(panel) {
       var showRecords = panel === 'records';
+      var showCash = panel === 'cash';
+      var showAdmin = panel === 'admin';
       document.getElementById('recordsPanel').style.display = showRecords ? '' : 'none';
-      document.getElementById('adminPanel').style.display = showRecords ? 'none' : '';
+      document.getElementById('cashPanel').style.display = showCash ? '' : 'none';
+      document.getElementById('adminPanel').style.display = showAdmin ? '' : 'none';
       document.getElementById('myNavBtn').classList.toggle('active', showRecords);
-      document.getElementById('adminNavBtn').classList.toggle('active', !showRecords);
+      document.getElementById('cashNavBtn').classList.toggle('active', showCash);
+      document.getElementById('adminNavBtn').classList.toggle('active', showAdmin);
+      if (showCash) loadShamCash(false);
     }
 
     // ============ MY RECORDS UI ============
@@ -1351,6 +1393,92 @@
         var syp = Math.round(val * buy).toLocaleString('en-US');
         if (note) note.textContent = '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' \u2248 ' + syp + ' SYP';
       }
+    }
+
+    // ============ MY CASH (ShamCash via secure proxy) ============
+    function loadShamCash(force) {
+      var statusEl = document.getElementById('cashStatus');
+      var listEl = document.getElementById('cashAccounts');
+      if (!statusEl) return;
+      if (!currentUser) return;
+      if (!SHAMCASH_PROXY || SHAMCASH_PROXY.indexOf('YOUR-SITE') !== -1) {
+        statusEl.className = 'muted';
+        statusEl.innerHTML = 'Proxy not configured yet. Set the SHAMCASH_PROXY URL in the source and redeploy.';
+        listEl.innerHTML = '';
+        return;
+      }
+      var token = myUserDoc && myUserDoc.shamToken;
+      if (!token) {
+        statusEl.className = 'muted';
+        statusEl.innerHTML = 'No ShamCash token yet. Open <b>Profile</b>, paste your API token from <b>shamcash-api.com/dashboard</b>, and save.';
+        listEl.innerHTML = '';
+        return;
+      }
+      if (!force && cashData && Date.now() - cashLoadedAt < 60 * 1000) { renderCash(cashData); return; }
+      statusEl.className = 'loading';
+      statusEl.innerHTML = 'Loading your ShamCash balance...';
+      listEl.innerHTML = '';
+      currentUser.getIdToken().then(function(idToken) {
+        return fetch(SHAMCASH_PROXY, { headers: { Authorization: 'Bearer ' + idToken } });
+      }).then(function(res) { return res.json(); }).then(function(payload) {
+        if (!payload || payload.status !== 'success') {
+          var msg = (payload && payload.message) || 'Proxy error';
+          statusEl.className = 'muted';
+          statusEl.innerHTML = 'ShamCash: ' + esc(msg) + ' <span class="inline-note">Check your token and the proxy URL.</span>';
+          return;
+        }
+        cashData = payload.data || {};
+        cashLoadedAt = Date.now();
+        renderCash(cashData);
+      }).catch(function(e) {
+        statusEl.className = 'muted';
+        statusEl.innerHTML = 'Could not reach the ShamCash proxy: ' + esc(e && e.message) + '. <span class="inline-note">Is the proxy deployed and SHAMCASH_PROXY set correctly?</span>';
+      });
+    }
+
+    function cashNum(b) {
+      var keys = ['balance', 'available_balance', 'available', 'total', 'amount', 'value'];
+      for (var i = 0; i < keys.length; i++) {
+        if (b[keys[i]] != null && !isNaN(parseFloat(b[keys[i]]))) return parseFloat(b[keys[i]]);
+      }
+      return NaN;
+    }
+
+    function renderCash(data) {
+      var statusEl = document.getElementById('cashStatus');
+      var listEl = document.getElementById('cashAccounts');
+      if (!statusEl) return;
+      var accounts = (data && data.accounts) || [];
+      var balances = (data && data.balances) || [];
+      statusEl.className = 'muted';
+      statusEl.innerHTML = (accounts.length || balances.length) ? '' : 'No accounts linked to this token.';
+      var html = '';
+      balances.forEach(function(b) {
+        var val = cashNum(b);
+        var cur = (b.currency || 'SYP') + '';
+        var label = b.account_name || b.account_id || 'Account';
+        html += '<div class="cash-card">';
+        html += '<div class="cash-head"><span class="cash-name">' + esc(label) + '</span>';
+        if (b.status) html += '<span class="badge badge-' + (b.status === 'active' ? 'ok' : 'bad') + '">' + esc(b.status) + '</span>';
+        html += '</div>';
+        if (b.subscription_expires_at) html += '<div class="cash-meta">subscription until ' + esc(b.subscription_expires_at) + '</div>';
+        if (!isNaN(val)) {
+          html += '<div class="cash-value">' + val.toLocaleString('en-US', { maximumFractionDigits: 2 }) + ' ' + esc(cur) + '</div>';
+          var buy = currentBuyRate();
+          if (cur.toUpperCase().indexOf('SYP') !== -1 && buy) html += '<div class="cash-usd">\u2248 $' + (val / buy).toFixed(2) + '</div>';
+        }
+        if (b.error) html += '<div class="cash-meta" style="color:#f48fb1">' + esc(b.error) + '</div>';
+        html += '</div>';
+      });
+      if (!html) html = '<div class="loading">No balance data yet \u2014 once you add your token it shows here.</div>';
+      listEl.innerHTML = html;
+    }
+
+    function esc(s) {
+      s = (s == null) ? '' : String(s);
+      return s.replace(/[&<>"']/g, function(c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
     }
 
     function applyCurrencyUI() {
@@ -1449,6 +1577,7 @@
     // ============ PROFILE (name, photo, password) ============
     function openProfileModal() {
       document.getElementById('profileName').value = (myUserDoc && myUserDoc.displayName) || (currentUser.displayName || '');
+      document.getElementById('profileShamToken').value = (myUserDoc && myUserDoc.shamToken) || '';
       document.getElementById('curPass').value = '';
       document.getElementById('newPass').value = '';
       document.getElementById('newPass2').value = '';
@@ -1526,13 +1655,16 @@
       if (!name) { showProfileMsg('Name cannot be empty.', true); return; }
       var nameChanged = name !== currentUser.displayName;
       var photoChanged = pendingPhoto !== null && pendingPhoto !== (myUserDoc && myUserDoc.photoData);
-      if (!nameChanged && !photoChanged) { showProfileMsg('No changes to save.', true); return; }
+      var token = document.getElementById('profileShamToken').value.trim();
+      var tokenChanged = token !== (myUserDoc && myUserDoc.shamToken || '');
+      if (!nameChanged && !photoChanged && !tokenChanged) { showProfileMsg('No changes to save.', true); return; }
       setBtnBusy('saveProfileBtn', true, 'Saving...');
       try {
         if (nameChanged) await currentUser.updateProfile({ displayName: name });
         var payload = {};
         if (nameChanged) payload.displayName = name;
         if (photoChanged) payload.photoData = pendingPhoto;
+        if (tokenChanged) payload.shamToken = token;
         await db.collection('users').doc(currentUser.uid).set(payload, { merge: true });
         await loadMyUser();
         renderAvatars();
