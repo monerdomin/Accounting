@@ -947,6 +947,16 @@
       </div>
       <button class="btn btn-primary btn-block" id="changePassBtn" onclick="changePassword()">Change Password</button>
 
+      <hr style="border-color:#222;border-style:solid;margin:20px 0">
+
+      <h3 style="color:#ef5350;font-size:15px;margin-bottom:6px">Danger Zone</h3>
+      <p class="inline-note">Deletes ALL of your records and your account. This cannot be undone.</p>
+      <div class="form-group">
+        <label>Type your password to confirm</label>
+        <input type="password" id="deletePass" autocomplete="current-password">
+      </div>
+      <button class="btn btn-danger btn-block" id="deleteMyAccountBtn" onclick="deleteMyAccount()">Delete My Account and All Data</button>
+
       <div class="modal-actions">
         <button class="btn btn-outline" onclick="closeModal('profileModalOverlay')">Close</button>
       </div>
@@ -1442,6 +1452,7 @@
       document.getElementById('curPass').value = '';
       document.getElementById('newPass').value = '';
       document.getElementById('newPass2').value = '';
+      document.getElementById('deletePass').value = '';
       pendingPhoto = null;
       document.getElementById('profilePhotoInput').value = '';
       showProfileMsg('', false);
@@ -1558,6 +1569,33 @@
         showProfileMsg(msg, true);
       }
       setBtnBusy('changePassBtn', false, 'Change Password');
+    }
+
+    async function deleteMyAccount() {
+      if (isAdmin()) {
+        alert('You are the admin. Your account grants admin access, so you cannot delete it from here. Ask another admin to delete you, or delete you via the Admin Panel.');
+        return;
+      }
+      var pass = document.getElementById('deletePass').value;
+      if (!pass) { alert('Type your password to confirm deletion.'); return; }
+      if (!confirm('This permanently deletes ALL of your records and your account. This cannot be undone.')) return;
+      if (!confirm('Last chance: are you absolutely sure? There is no undo.')) return;
+      setBtnBusy('deleteMyAccountBtn', true, 'Deleting...');
+      try {
+        var cred = firebase.auth.EmailAuthProvider.credential(currentUser.email, pass);
+        await currentUser.reauthenticateWithCredential(cred);
+        var snaps = await db.collection('records').where('ownerUid', '==', currentUser.uid).get();
+        var batch = db.batch();
+        snaps.forEach(function(d) { batch.delete(d.ref); });
+        await batch.commit();
+        await db.collection('users').doc(currentUser.uid).delete();
+        await currentUser.delete();
+      } catch (e) {
+        var msg = (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential' || e.code === 'auth/invalid-login-credentials')
+          ? 'Wrong password.' : ((e.message || 'Something went wrong.') + (e.code === 'auth/requires-recent-login' ? ' Please log in again and retry.' : ''));
+        alert('Delete failed: ' + msg);
+        setBtnBusy('deleteMyAccountBtn', false, 'Delete My Account and All Data');
+      }
     }
 
     function renderAllAvatarRows() {

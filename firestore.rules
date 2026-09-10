@@ -18,14 +18,15 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.role == 'user';
       allow update: if (request.auth != null && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'email', 'currency', 'photoData'])) || isAdmin();
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || (request.auth != null && request.auth.uid == uid);
     }
 
     // Records collection
     match /records/{recordId} {
       allow read: if request.auth != null && (resource.data.ownerUid == request.auth.uid || isAdmin());
       allow create: if request.auth != null && !isBanned() && request.resource.data.ownerUid == request.auth.uid;
-      allow update, delete: if request.auth != null && !isBanned() && (resource.data.ownerUid == request.auth.uid || isAdmin());
+      allow update: if request.auth != null && !isBanned() && (resource.data.ownerUid == request.auth.uid || isAdmin());
+      allow delete: if request.auth != null && (resource.data.ownerUid == request.auth.uid || isAdmin());
     }
   }
 }
