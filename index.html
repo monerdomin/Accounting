@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Accounting Records</title>
+  <link rel="icon" href="data:,">
+  <!-- Firebase compat SDK (no npm / no build step needed) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -14,170 +20,60 @@
       min-height: 100vh;
     }
 
-    header {
-      background: linear-gradient(135deg, #1a1d27, #2a2d3a);
-      border-bottom: 1px solid #333;
-      padding: 20px 40px;
+    /* ---------- AUTH SCREEN ---------- */
+    #authScreen {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    header h1 {
-      font-size: 24px;
-      color: #4fc3f7;
-      font-weight: 700;
-    }
-
-    header h1 span {
-      color: #81c784;
-    }
-
-    .stats-bar {
-      display: flex;
-      gap: 24px;
-    }
-
-    .stat-box {
-      text-align: center;
-      background: #1a1d27;
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 10px 20px;
-    }
-
-    .stat-box .num {
-      font-size: 22px;
-      font-weight: 700;
-      color: #4fc3f7;
-    }
-
-    .stat-box .label {
-      font-size: 11px;
-      color: #888;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 30px 20px;
-    }
-
-    .top-actions {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-      transition: all 0.2s;
-    }
-
-    .btn-primary {
-      background: #4fc3f7;
-      color: #0f1117;
-    }
-
-    .btn-primary:hover { background: #81d4fa; }
-
-    .btn-success {
-      background: #81c784;
-      color: #0f1117;
-    }
-
-    .btn-success:hover { background: #a5d6a7; }
-
-    .btn-danger {
-      background: #e57373;
-      color: #0f1117;
-    }
-
-    .btn-danger:hover { background: #ef9a9a; }
-
-    .btn-outline {
-      background: transparent;
-      color: #4fc3f7;
-      border: 1px solid #4fc3f7;
-    }
-
-    .btn-outline:hover {
-      background: #4fc3f7;
-      color: #0f1117;
-    }
-
-    .filter-bar {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      align-items: center;
-      margin-bottom: 24px;
-      background: #1a1d27;
-      padding: 16px;
-      border-radius: 10px;
-      border: 1px solid #2a2d3a;
-    }
-
-    .filter-bar label {
-      font-size: 13px;
-      color: #888;
-      font-weight: 600;
-    }
-
-    .filter-bar input, .filter-bar select {
-      padding: 8px 14px;
-      border-radius: 6px;
-      border: 1px solid #333;
-      background: #12141c;
-      color: #e0e0e0;
-      font-size: 13px;
-      outline: none;
-    }
-
-    .filter-bar input:focus, .filter-bar select:focus {
-      border-color: #4fc3f7;
-    }
-
-    /* Modal */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7);
-      z-index: 1000;
       justify-content: center;
       align-items: center;
+      min-height: 100vh;
+      background: radial-gradient(circle at 20% 20%, #16202c, #0f1117 60%);
     }
 
-    .modal-overlay.active { display: flex; }
-
-    .modal {
+    .auth-card {
       background: #1a1d27;
-      border: 1px solid #333;
+      border: 1px solid #2a2d3a;
       border-radius: 14px;
-      padding: 30px;
-      width: 520px;
-      max-width: 95vw;
-      max-height: 90vh;
-      overflow-y: auto;
+      padding: 40px;
+      width: 420px;
+      max-width: 92vw;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
     }
 
-    .modal h2 {
+    .auth-card h1 {
       color: #4fc3f7;
-      margin-bottom: 20px;
-      font-size: 20px;
+      font-size: 22px;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .auth-card .subtitle {
+      text-align: center;
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+
+    .auth-tabs {
+      display: flex;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #2a2d3a;
+    }
+
+    .auth-tabs button {
+      flex: 1;
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+
+    .auth-tabs button.active {
+      color: #4fc3f7;
+      border-bottom-color: #4fc3f7;
     }
 
     .form-group {
@@ -208,41 +104,234 @@
       border-color: #4fc3f7;
     }
 
-    .form-group textarea { resize: vertical; min-height: 70px; }
+    .error-box {
+      background: #3a1b1b;
+      border: 1px solid #5c2a2a;
+      color: #f48fb1;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
 
-    .form-group input[type="file"] {
-      padding: 8px;
-      border: 2px dashed #333;
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-block { width: 100%; }
+
+    .btn-primary { background: #4fc3f7; color: #0f1117; }
+    .btn-primary:hover { background: #81d4fa; }
+    .btn-primary:disabled { background: #2a3a44; color: #666; cursor: not-allowed; }
+
+    .btn-success { background: #81c784; color: #0f1117; }
+    .btn-success:hover { background: #a5d6a7; }
+
+    .btn-danger { background: #e57373; color: #0f1117; }
+    .btn-danger:hover { background: #ef9a9a; }
+
+    .btn-outline {
+      background: transparent;
+      color: #4fc3f7;
+      border: 1px solid #4fc3f7;
+    }
+    .btn-outline:hover { background: #4fc3f7; color: #0f1117; }
+
+    .auth-footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+    }
+
+    /* ---------- APP SCREEN ---------- */
+    #appScreen { display: none; }
+
+    header {
+      background: linear-gradient(135deg, #1a1d27, #2a2d3a);
+      border-bottom: 1px solid #333;
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    header h1 { font-size: 20px; color: #4fc3f7; font-weight: 700; }
+    header h1 span { color: #81c784; }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       background: #12141c;
+      border: 1px solid #333;
+      padding: 6px 14px;
+      border-radius: 20px;
+    }
+
+    .user-chip .email { font-size: 13px; color: #ccc; }
+    .role-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .role-admin { background: #1b3a2a; color: #81c784; }
+    .role-user { background: #1b3a4b; color: #4fc3f7; }
+
+    .btn-logout {
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid #e57373;
+      color: #e57373;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-logout:hover { background: #e57373; color: #0f1117; }
+
+    .nav-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 14px 40px 0;
+    }
+
+    .nav-tabs button {
+      padding: 10px 22px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: #888;
+      font-size: 14px;
+      font-weight: 600;
       cursor: pointer;
     }
 
-    .form-group input[type="file"]:hover {
-      border-color: #4fc3f7;
+    .nav-tabs button.active {
+      color: #4fc3f7;
+      border-bottom-color: #4fc3f7;
     }
 
-    .modal-actions {
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 20px 40px;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .stat-box {
+      text-align: center;
+      background: #1a1d27;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 12px 24px;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .stat-box .num { font-size: 22px; font-weight: 700; color: #4fc3f7; }
+    .stat-box .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+
+    .top-actions {
       display: flex;
       gap: 12px;
-      justify-content: flex-end;
-      margin-top: 20px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      align-items: center;
     }
 
-    /* Table */
-    .table-wrapper {
-      overflow-x: auto;
+    .filter-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 20px;
+      background: #1a1d27;
+      padding: 16px;
       border-radius: 10px;
       border: 1px solid #2a2d3a;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    .filter-bar label { font-size: 13px; color: #888; font-weight: 600; }
+    .filter-bar input, .filter-bar select {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #12141c;
+      color: #e0e0e0;
+      font-size: 13px;
+      outline: none;
+    }
+    .filter-bar input:focus, .filter-bar select:focus { border-color: #4fc3f7; }
+
+    .search-input {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #12141c;
+      color: #e0e0e0;
+      font-size: 13px;
+      outline: none;
+      min-width: 220px;
     }
 
-    thead {
-      background: #1a1d27;
+    .year-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+
+    .year-chip {
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1px solid #333;
+      background: transparent;
+      color: #aaa;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.15s;
     }
+    .year-chip:hover, .year-chip.active { background: #4fc3f7; color: #0f1117; border-color: #4fc3f7; }
+
+    .view-toggle { display: flex; gap: 4px; margin-left: auto; }
+    .view-toggle button {
+      padding: 8px 12px;
+      border: 1px solid #333;
+      background: transparent;
+      color: #888;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .view-toggle button:first-child { border-radius: 6px 0 0 6px; }
+    .view-toggle button:last-child { border-radius: 0 6px 6px 0; }
+    .view-toggle button.active { background: #4fc3f7; color: #0f1117; border-color: #4fc3f7; }
+
+    .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #2a2d3a; }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead { background: #1a1d27; }
 
     thead th {
       padding: 14px 16px;
@@ -256,21 +345,12 @@
       user-select: none;
       white-space: nowrap;
     }
-
     thead th:hover { color: #4fc3f7; }
 
-    tbody tr {
-      border-bottom: 1px solid #1e2029;
-      transition: background 0.15s;
-    }
-
+    tbody tr { border-bottom: 1px solid #1e2029; transition: background 0.15s; }
     tbody tr:hover { background: #1e2030; }
 
-    tbody td {
-      padding: 12px 16px;
-      font-size: 14px;
-      vertical-align: middle;
-    }
+    tbody td { padding: 12px 16px; font-size: 14px; vertical-align: middle; }
 
     .category-badge {
       display: inline-block;
@@ -279,7 +359,6 @@
       font-size: 12px;
       font-weight: 600;
     }
-
     .cat-invoice { background: #1b3a4b; color: #4fc3f7; }
     .cat-tax { background: #3a2a1b; color: #ffb74d; }
     .cat-expense { background: #3a1b2a; color: #f48fb1; }
@@ -288,19 +367,10 @@
     .cat-receipt { background: #3a3a1b; color: #fff176; }
     .cat-other { background: #2a2a2a; color: #bbb; }
 
-    .file-link {
-      color: #4fc3f7;
-      text-decoration: none;
-      font-size: 13px;
-    }
-
+    .file-link { color: #4fc3f7; text-decoration: none; font-size: 13px; cursor: pointer; }
     .file-link:hover { text-decoration: underline; }
 
-    .action-btns {
-      display: flex;
-      gap: 6px;
-    }
-
+    .action-btns { display: flex; gap: 6px; }
     .action-btns button {
       background: none;
       border: none;
@@ -310,208 +380,220 @@
       border-radius: 4px;
       transition: background 0.15s;
     }
+    .action-btns button:hover { background: #2a2d3a; }
 
-    .action-btns button:hover {
-      background: #2a2d3a;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: #555;
-    }
-
+    .empty-state { text-align: center; padding: 60px 20px; color: #555; }
     .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
     .empty-state p { font-size: 16px; }
 
-    .search-input {
-      padding: 8px 14px;
-      border-radius: 6px;
-      border: 1px solid #333;
-      background: #12141c;
-      color: #e0e0e0;
-      font-size: 13px;
-      outline: none;
-      min-width: 220px;
-    }
-
-    .search-input:focus { border-color: #4fc3f7; }
-
-    .year-chips {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .year-chip {
-      padding: 5px 14px;
-      border-radius: 20px;
-      border: 1px solid #333;
-      background: transparent;
-      color: #aaa;
-      cursor: pointer;
-      font-size: 13px;
-      transition: all 0.15s;
-    }
-
-    .year-chip:hover, .year-chip.active {
-      background: #4fc3f7;
-      color: #0f1117;
-      border-color: #4fc3f7;
-    }
-
-    .view-toggle {
-      display: flex;
-      gap: 4px;
-      margin-left: auto;
-    }
-
-    .view-toggle button {
-      padding: 8px 12px;
-      border: 1px solid #333;
-      background: transparent;
-      color: #888;
-      cursor: pointer;
-      font-size: 16px;
-    }
-
-    .view-toggle button:first-child { border-radius: 6px 0 0 6px; }
-    .view-toggle button:last-child { border-radius: 0 6px 6px 0; }
-
-    .view-toggle button.active {
-      background: #4fc3f7;
-      color: #0f1117;
-      border-color: #4fc3f7;
-    }
-
-    .cards-view {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 16px;
-    }
-
-    .card {
-      background: #1a1d27;
-      border: 1px solid #2a2d3a;
-      border-radius: 10px;
-      padding: 20px;
-      transition: border-color 0.15s;
-    }
-
+    /* Cards view */
+    .cards-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .card { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; padding: 20px; transition: border-color 0.15s; }
     .card:hover { border-color: #4fc3f7; }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .card h3 { font-size: 16px; color: #e0e0e0; margin-bottom: 4px; }
+    .card .date { font-size: 12px; color: #666; }
+    .card .amount { font-size: 18px; font-weight: 700; color: #81c784; margin: 8px 0; }
+    .card .notes { font-size: 13px; color: #888; line-height: 1.4; }
+    .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid #2a2d3a; }
 
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 12px;
-    }
-
-    .card h3 {
-      font-size: 16px;
-      color: #e0e0e0;
-      margin-bottom: 4px;
-    }
-
-    .card .date {
-      font-size: 12px;
-      color: #666;
-    }
-
-    .card .amount {
-      font-size: 18px;
-      font-weight: 700;
-      color: #81c784;
-      margin: 8px 0;
-    }
-
-    .card .notes {
-      font-size: 13px;
-      color: #888;
-      line-height: 1.4;
-    }
-
-    .card-footer {
-      display: flex;
-      justify-content: space-between;
+    /* Modals */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 1000;
+      justify-content: center;
       align-items: center;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid #2a2d3a;
     }
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: #1a1d27;
+      border: 1px solid #333;
+      border-radius: 14px;
+      padding: 30px;
+      width: 540px;
+      max-width: 95vw;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal h2 { color: #4fc3f7; margin-bottom: 20px; font-size: 20px; }
+    .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; }
+
+    .form-group input[type="file"] {
+      padding: 8px;
+      border: 2px dashed #333;
+      background: #12141c;
+      cursor: pointer;
+    }
+    .form-group input[type="file"]:hover { border-color: #4fc3f7; }
+
+    .inline-note { font-size: 12px; color: #888; margin-top: 6px; }
+
+    .loading {
+      text-align: center;
+      padding: 60px;
+      color: #888;
+      font-size: 15px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      border: 3px solid #333;
+      border-top-color: #4fc3f7;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .badge-green { background: #1b3a2a; color: #81c784; }
+    .badge-red { background: #3a1b1b; color: #f48fb1; }
+    .badge-gray { background: #2a2a2a; color: #bbb; }
 
     @media (max-width: 600px) {
       header { padding: 16px 20px; }
-      header h1 { font-size: 18px; }
-      .stats-bar { gap: 12px; }
-      .stat-box { padding: 8px 14px; }
-      .stat-box .num { font-size: 18px; }
-      .container { padding: 20px 12px; }
+      .nav-tabs { padding: 10px 12px 0; }
+      .container { padding: 16px 12px 40px; }
       .modal { padding: 20px; }
+      .user-chip .email { max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>My <span>Accounting</span> Records</h1>
-    <div class="stats-bar">
-      <div class="stat-box">
-        <div class="num" id="totalRecords">0</div>
-        <div class="label">Records</div>
+
+  <!-- ===================== AUTH SCREEN ===================== -->
+  <div id="authScreen">
+    <div class="auth-card">
+      <h1>My Accounting Records</h1>
+      <div class="subtitle">Sign in to manage your work records</div>
+
+      <div class="auth-tabs">
+        <button id="tabLoginBtn" class="active" onclick="switchTab('login')">Login</button>
+        <button id="tabSignupBtn" onclick="switchTab('signup')">Sign Up</button>
       </div>
-      <div class="stat-box">
-        <div class="num" id="totalAmount">$0</div>
-        <div class="label">Total Amount</div>
+
+      <div class="error-box" id="authError"></div>
+
+      <!-- Login form -->
+      <div id="loginForm">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="you@email.com">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="password">
+        </div>
+        <button class="btn btn-primary btn-block" id="loginBtn" onclick="handleLogin()">Login</button>
       </div>
-      <div class="stat-box">
-        <div class="num" id="thisYearCount">0</div>
-        <div class="label">This Year</div>
+
+      <!-- Signup form -->
+      <div id="signupForm" style="display:none">
+        <div class="form-group">
+          <label>Your Name</label>
+          <input type="text" id="signupName" placeholder="John Doe">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="signupEmail" placeholder="you@email.com">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="signupPassword" placeholder="at least 6 characters">
+        </div>
+        <button class="btn btn-primary btn-block" id="signupBtn" onclick="handleSignup()">Create Account</button>
       </div>
+
+      <div class="auth-footer">First account created = Admin. Later accounts = User.</div>
     </div>
-  </header>
-
-  <div class="container">
-    <div class="top-actions">
-      <button class="btn btn-primary" onclick="openModal()">+ New Record</button>
-      <button class="btn btn-success" onclick="exportCSV()">Export CSV</button>
-      <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">Import CSV</button>
-      <input type="file" id="importFile" accept=".csv" style="display:none" onchange="importCSV(event)">
-      <button class="btn btn-danger" onclick="clearAll()" title="Delete all records">Clear All</button>
-    </div>
-
-    <div class="filter-bar">
-      <label>Search:</label>
-      <input type="text" class="search-input" id="searchInput" placeholder="Search records..." oninput="renderRecords()">
-      <label>Category:</label>
-      <select id="filterCategory" onchange="renderRecords()">
-        <option value="">All</option>
-        <option value="Invoice">Invoice</option>
-        <option value="Tax">Tax</option>
-        <option value="Expense">Expense</option>
-        <option value="Revenue">Revenue</option>
-        <option value="Payroll">Payroll</option>
-        <option value="Receipt">Receipt</option>
-        <option value="Other">Other</option>
-      </select>
-      <div class="view-toggle">
-        <button class="active" id="tableViewBtn" onclick="setView('table')">Table</button>
-        <button id="cardViewBtn" onclick="setView('cards')">Cards</button>
-      </div>
-    </div>
-
-    <div id="yearChips" class="year-chips" style="margin-bottom: 20px;"></div>
-
-    <div id="recordsContainer"></div>
   </div>
 
-  <!-- Add/Edit Modal -->
-  <div class="modal-overlay" id="modalOverlay" onclick="closeModalOverlay(event)">
+  <!-- ===================== APP SCREEN ===================== -->
+  <div id="appScreen">
+    <header>
+      <h1>My <span>Accounting</span> Records</h1>
+      <div class="user-info">
+        <div class="user-chip">
+          <span class="email" id="userEmail"></span>
+          <span class="role-badge" id="userRoleBadge">User</span>
+        </div>
+        <button class="btn-logout" onclick="handleLogout()">Logout</button>
+      </div>
+    </header>
+
+    <div class="nav-tabs">
+      <button id="myNavBtn" class="active" onclick="switchPanel('records')">My Records</button>
+      <button id="adminNavBtn" style="display:none" onclick="switchPanel('admin')">Admin Panel</button>
+    </div>
+
+    <!-- My Records panel -->
+    <div id="recordsPanel" class="container">
+      <div class="stats-bar">
+        <div class="stat-box"><div class="num" id="totalRecords">0</div><div class="label">Records</div></div>
+        <div class="stat-box"><div class="num" id="totalAmount">$0</div><div class="label">Total Amount</div></div>
+        <div class="stat-box"><div class="num" id="thisYearCount">0</div><div class="label">This Year</div></div>
+      </div>
+
+      <div class="top-actions">
+        <button class="btn btn-primary" onclick="openRecordModal()">+ New Record</button>
+        <button class="btn btn-outline" onclick="toggleView()" id="viewToggleBtn">Cards view</button>
+      </div>
+
+      <div class="filter-bar">
+        <label>Search:</label>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search records..." oninput="renderRecords()">
+        <label>Category:</label>
+        <select id="filterCategory" onchange="renderRecords()">
+          <option value="">All</option>
+          <option>Invoice</option>
+          <option>Tax</option>
+          <option>Expense</option>
+          <option>Revenue</option>
+          <option>Payroll</option>
+          <option>Receipt</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div id="yearChips" class="year-chips"></div>
+      <div id="recordsContainer"><div class="loading"><div class="spinner"></div><br>Loading...</div></div>
+    </div>
+
+    <!-- Admin panel -->
+    <div id="adminPanel" class="container" style="display:none">
+      <h2 style="color:#4fc3f7;margin-bottom:16px">Admin Panel</h2>
+
+      <h3 style="color:#aaa;margin:24px 0 12px;font-size:15px">All Users</h3>
+      <div id="usersContainer"><div class="loading">Loading users...</div></div>
+
+      <h3 style="color:#aaa;margin:30px 0 12px;font-size:15px">All Records (every user)</h3>
+      <div class="filter-bar">
+        <label>Search:</label>
+        <input type="text" class="search-input" id="adminSearchInput" placeholder="Search all records..." oninput="renderAllRecords()">
+        <label>User:</label>
+        <select id="adminUserFilter" onchange="renderAllRecords()">
+          <option value="">All users</option>
+        </select>
+      </div>
+      <div id="allRecordsContainer"><div class="loading">Loading records...</div></div>
+    </div>
+  </div>
+
+  <!-- ===================== RECORD MODAL ===================== -->
+  <div class="modal-overlay" id="recordModalOverlay" onclick="closeOverlay(event, 'recordModalOverlay')">
     <div class="modal">
-      <h2 id="modalTitle">Add New Record</h2>
+      <h2 id="recordModalTitle">Add New Record</h2>
       <input type="hidden" id="editId">
       <div class="form-group">
         <label>Title *</label>
-        <input type="text" id="recTitle" placeholder="e.g. Q3 Invoice - Client ABC">
+        <input type="text" id="recTitle" placeholder="e.g. Q1 Invoice - Client ABC">
       </div>
       <div class="form-group">
         <label>Date *</label>
@@ -520,13 +602,13 @@
       <div class="form-group">
         <label>Category *</label>
         <select id="recCategory">
-          <option value="Invoice">Invoice</option>
-          <option value="Tax">Tax</option>
-          <option value="Expense">Expense</option>
-          <option value="Revenue">Revenue</option>
-          <option value="Payroll">Payroll</option>
-          <option value="Receipt">Receipt</option>
-          <option value="Other">Other</option>
+          <option>Invoice</option>
+          <option>Tax</option>
+          <option>Expense</option>
+          <option>Revenue</option>
+          <option>Payroll</option>
+          <option>Receipt</option>
+          <option>Other</option>
         </select>
       </div>
       <div class="form-group">
@@ -538,357 +620,685 @@
         <textarea id="recNotes" placeholder="Any notes about this record..."></textarea>
       </div>
       <div class="form-group">
-        <label>Attach File (stored locally)</label>
+        <label id="fileLabel">Attach File (saved to Firebase Storage)</label>
         <input type="file" id="recFile">
+        <div class="inline-note" id="existingFileNote"></div>
       </div>
       <div class="modal-actions">
-        <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveRecord()">Save Record</button>
+        <button class="btn btn-outline" onclick="closeModal('recordModalOverlay')">Cancel</button>
+        <button class="btn btn-primary" id="saveRecordBtn" onclick="saveRecord()">Save Record</button>
       </div>
     </div>
   </div>
 
-  <!-- View Detail Modal -->
-  <div class="modal-overlay" id="detailOverlay" onclick="closeDetailOverlay(event)">
+  <!-- ===================== DETAIL MODAL ===================== -->
+  <div class="modal-overlay" id="detailOverlay" onclick="closeOverlay(event, 'detailOverlay')">
     <div class="modal">
       <h2 id="detailTitle">Record Details</h2>
       <div id="detailContent"></div>
       <div class="modal-actions">
-        <button class="btn btn-outline" onclick="closeDetail()">Close</button>
+        <button class="btn btn-outline" onclick="closeModal('detailOverlay')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== USER MODAL (admin) ===================== -->
+  <div class="modal-overlay" id="userModalOverlay" onclick="closeOverlay(event, 'userModalOverlay')">
+    <div class="modal">
+      <h2>User Details</h2>
+      <div id="userDetailContent"></div>
+      <div class="modal-actions">
+        <button class="btn btn-danger" id="adminDeleteUserBtn" onclick="adminDeleteUser()">Delete User</button>
+        <button class="btn btn-outline" onclick="closeModal('userModalOverlay')">Close</button>
       </div>
     </div>
   </div>
 
   <script>
-    let records = JSON.parse(localStorage.getItem('accountingRecords') || '[]');
-    let currentView = 'table';
-    let selectedYear = '';
+    // ============ FIREBASE CONFIG (paste your keys here) ============
+    var firebaseConfig = {
+      apiKey: "AIzaSyA2X5fOgSLXgkR9VaZBUgt_Xo7TVto0__I",
+      authDomain: "accountingwepsite.firebaseapp.com",
+      projectId: "accountingwepsite",
+      storageBucket: "accountingwepsite.firebasestorage.app",
+      messagingSenderId: "356723782361",
+      appId: "1:356723782361:web:fe51286b317f2b6ab084c8",
+      measurementId: "G-WF1E26M0CZ"
+    };
+    // ================================================================
 
-    function generateId() {
-      return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    firebase.initializeApp(firebaseConfig);
+    var auth = firebase.auth();
+    var db = firebase.firestore();
+    var storage = firebase.storage();
+
+    // ============ STATE ============
+    var currentUser = null;       // Firebase user object
+    var myUserDoc = null;         // users collection doc ({role, displayName})
+    var myRecords = [];           // own records
+    var allRecords = [];          // admin: all records
+    var allUsers = [];            // admin: all users
+    var currentView = 'table';
+    var selectedYear = '';
+    var editingRecordId = null;
+    var adminTargetUid = null;
+
+    // ============ AUTH FLOW ============
+    auth.onAuthStateChanged(async function(user) {
+      if (user) {
+        currentUser = user;
+        await loadMyUser();
+        showApp();
+        await refreshAllData();
+      } else {
+        showAuth();
+      }
+    });
+
+    function showAuth() {
+      document.getElementById('authScreen').style.display = 'flex';
+      document.getElementById('appScreen').style.display = 'none';
     }
 
-    function save() {
-      localStorage.setItem('accountingRecords', JSON.stringify(records));
+    function showApp() {
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('appScreen').style.display = 'block';
+      document.getElementById('userEmail').textContent = currentUser.email;
+      var badge = document.getElementById('userRoleBadge');
+      if (isAdmin()) {
+        badge.textContent = 'Admin';
+        badge.className = 'role-badge role-admin';
+        document.getElementById('adminNavBtn').style.display = '';
+      } else {
+        badge.textContent = 'User';
+        badge.className = 'role-badge role-user';
+        document.getElementById('adminNavBtn').style.display = 'none';
+      }
+    }
+
+    function isAdmin() {
+      return myUserDoc && myUserDoc.role === 'admin';
+    }
+
+    function switchTab(tab) {
+      var isLogin = tab === 'login';
+      document.getElementById('tabLoginBtn').classList.toggle('active', isLogin);
+      document.getElementById('tabSignupBtn').classList.toggle('active', !isLogin);
+      document.getElementById('loginForm').style.display = isLogin ? '' : 'none';
+      document.getElementById('signupForm').style.display = isLogin ? 'none' : '';
+      hideError();
+    }
+
+    function showError(msg) {
+      var el = document.getElementById('authError');
+      el.textContent = msg;
+      el.style.display = '';
+    }
+    function hideError() {
+      document.getElementById('authError').style.display = 'none';
+    }
+
+    function setBtnBusy(id, busy, text) {
+      var b = document.getElementById(id);
+      b.disabled = busy;
+      if (text) b.textContent = text;
+    }
+
+    async function handleLogin() {
+      var email = document.getElementById('loginEmail').value.trim();
+      var pass = document.getElementById('loginPassword').value;
+      if (!email || !pass) { showError('Please enter email and password.'); return; }
+      setBtnBusy('loginBtn', true, 'Logging in...');
+      try {
+        await auth.signInWithEmailAndPassword(email, pass);
+      } catch (e) {
+        showError(friendlyAuthError(e));
+        setBtnBusy('loginBtn', false, 'Login');
+      }
+    }
+
+    async function handleSignup() {
+      var name = document.getElementById('signupName').value.trim();
+      var email = document.getElementById('signupEmail').value.trim();
+      var pass = document.getElementById('signupPassword').value;
+      if (!name) { showError('Please enter your name.'); return; }
+      if (!email) { showError('Please enter your email.'); return; }
+      if (pass.length < 6) { showError('Password must be at least 6 characters.'); return; }
+      setBtnBusy('signupBtn', true, 'Creating account...');
+      try {
+        var cred = await auth.createUserWithEmailAndPassword(email, pass);
+        await cred.user.updateProfile({ displayName: name });
+
+        // First user in the system becomes Admin
+        var anyUser = await db.collection('users').limit(1).get();
+        var role = (anyUser.size === 0) ? 'admin' : 'user';
+
+        await db.collection('users').doc(cred.user.uid).set({
+          email: email,
+          displayName: name,
+          role: role,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        // auth.onAuthStateChanged will take over now
+      } catch (e) {
+        showError(friendlyAuthError(e));
+        setBtnBusy('signupBtn', false, 'Create Account');
+      }
+    }
+
+    function friendlyAuthError(e) {
+      var code = e.code || '';
+      var map = {
+        'auth/invalid-email': 'Invalid email address.',
+        'auth/user-disabled': 'This account has been disabled.',
+        'auth/user-not-found': 'No account found with this email.',
+        'auth/wrong-password': 'Incorrect password.',
+        'auth/email-already-in-use': 'An account with this email already exists.',
+        'auth/weak-password': 'Password is too weak (need 6+ characters).',
+        'auth/too-many-requests': 'Too many attempts. Try again later.',
+        'auth/unauthorized-domain': 'This domain is not authorized. Add it in Firebase Auth settings.',
+        'auth/network-request-failed': 'Network error. Check your connection.'
+      };
+      return map[code] || (e.message || 'Something went wrong.');
+    }
+
+    async function handleLogout() {
+      await auth.signOut();
+      resetState();
+    }
+
+    // ============ USER DOC ============
+    async function loadMyUser() {
+      var snap = await db.collection('users').doc(currentUser.uid).get();
+      if (snap.exists) {
+        myUserDoc = snap.data();
+      } else {
+        myUserDoc = { email: currentUser.email, role: 'user', displayName: currentUser.displayName || '' };
+      }
+    }
+
+    function resetState() {
+      myUserDoc = null;
+      myRecords = [];
+      allRecords = [];
+      allUsers = [];
+      currentView = 'table';
+      selectedYear = '';
+      showAuth();
+    }
+
+    // ============ DATA LOADING ============
+    async function refreshAllData() {
+      await Promise.all([loadMyRecords(), isAdmin() ? loadAllData() : Promise.resolve()]);
+    }
+
+    async function loadMyRecords() {
+      var snap = await db.collection('records')
+        .where('ownerUid', '==', currentUser.uid)
+        .orderBy('date', 'desc')
+        .get();
+      myRecords = [];
+      snap.forEach(function(doc) { myRecords.push(Object.assign({ id: doc.id }, doc.data())); });
+      renderRecords();
       updateStats();
     }
 
+    async function loadAllData() {
+      await Promise.all([loadAllRecords(), loadAllUsers()]);
+    }
+
+    async function loadAllRecords() {
+      var snap = await db.collection('records').orderBy('date', 'desc').get();
+      allRecords = [];
+      var emailMap = {};
+      allUsers.forEach(function(u) { emailMap[u.uid] = u.email; });
+      snap.forEach(function(doc) {
+        var data = Object.assign({ id: doc.id }, doc.data());
+        data.ownerEmail = emailMap[data.ownerUid] || 'unknown';
+        allRecords.push(data);
+      });
+      renderAllRecords();
+    }
+
+    async function loadAllUsers() {
+      var snap = await db.collection('users').get();
+      allUsers = [];
+      snap.forEach(function(doc) {
+        var data = Object.assign({ uid: doc.id }, doc.data());
+        data.memberCount = 0;
+        allUsers.push(data);
+      });
+      renderAllRecords(); // re-render to refresh emails + filter
+      renderAdminUsers();
+      populateUserFilter();
+    }
+
+    // ============ NAVIGATION ============
+    function switchPanel(panel) {
+      var showRecords = panel === 'records';
+      document.getElementById('recordsPanel').style.display = showRecords ? '' : 'none';
+      document.getElementById('adminPanel').style.display = showRecords ? 'none' : '';
+      document.getElementById('myNavBtn').classList.toggle('active', showRecords);
+      document.getElementById('adminNavBtn').classList.toggle('active', !showRecords);
+    }
+
+    // ============ MY RECORDS UI ============
     function updateStats() {
-      document.getElementById('totalRecords').textContent = records.length;
-      const total = records.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+      document.getElementById('totalRecords').textContent = myRecords.length;
+      var total = myRecords.reduce(function(s, r) { return s + (parseFloat(r.amount) || 0); }, 0);
       document.getElementById('totalAmount').textContent = '$' + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      const thisYear = new Date().getFullYear();
-      document.getElementById('thisYearCount').textContent = records.filter(r => r.date && r.date.startsWith(thisYear.toString())).length;
+      var thisYear = new Date().getFullYear();
+      document.getElementById('thisYearCount').textContent = myRecords.filter(function(r) { return r.date && r.date.indexOf(thisYear + '') === 0; }).length;
     }
 
     function getYears() {
-      const years = [...new Set(records.map(r => r.date ? r.date.substring(0, 4) : '').filter(Boolean))].sort().reverse();
-      return years;
+      var years = [];
+      myRecords.forEach(function(r) { if (r.date) { var y = r.date.substring(0, 4); if (years.indexOf(y) === -1) years.push(y); } });
+      return years.sort().reverse();
     }
 
     function renderYearChips() {
-      const years = getYears();
-      const container = document.getElementById('yearChips');
-      if (years.length === 0) { container.innerHTML = ''; return; }
-      container.innerHTML = '<button class="year-chip ' + (selectedYear === '' ? 'active' : '') + '" onclick="selectYear(\'\')">All Years</button>' +
-        years.map(y => '<button class="year-chip ' + (selectedYear === y ? 'active' : '') + '" onclick="selectYear(\'' + y + '\')">' + y + '</button>').join('');
+      var years = getYears();
+      var container = document.getElementById('yearChips');
+      if (!years.length) { container.innerHTML = ''; return; }
+      var html = '<button class="year-chip ' + (selectedYear === '' ? 'active' : '') + '" onclick="selectYear(\'\', false)">All Years</button>';
+      years.forEach(function(y) {
+        html += '<button class="year-chip ' + (selectedYear === y ? 'active' : '') + '" onclick="selectYear(\'' + y + '\', false)">' + y + '</button>';
+      });
+      container.innerHTML = html;
     }
 
-    function selectYear(y) {
+    function selectYear(y, isAdminView) {
       selectedYear = y;
-      renderYearChips();
-      renderRecords();
+      if (isAdminView) renderAllRecords(); else renderRecords();
     }
 
-    function getFilteredRecords() {
-      const search = document.getElementById('searchInput').value.toLowerCase();
-      const cat = document.getElementById('filterCategory').value;
-      return records.filter(r => {
-        if (selectedYear && (!r.date || !r.date.startsWith(selectedYear))) return false;
+    function getFilteredMyRecords() {
+      var search = document.getElementById('searchInput').value.toLowerCase();
+      var cat = document.getElementById('filterCategory').value;
+      return myRecords.filter(function(r) {
+        if (selectedYear && (!r.date || r.date.indexOf(selectedYear) !== 0)) return false;
         if (cat && r.category !== cat) return false;
         if (search) {
-          const haystack = (r.title + ' ' + r.notes + ' ' + r.category + ' ' + r.amount + ' ' + r.date).toLowerCase();
-          if (!haystack.includes(search)) return false;
+          var hay = ((r.title || '') + ' ' + (r.notes || '') + ' ' + (r.category || '') + ' ' + (r.amount || '') + ' ' + (r.date || '')).toLowerCase();
+          if (hay.indexOf(search) === -1) return false;
         }
         return true;
-      }).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      });
     }
 
     function catClass(cat) {
-      const map = { Invoice: 'cat-invoice', Tax: 'cat-tax', Expense: 'cat-expense', Revenue: 'cat-revenue', Payroll: 'cat-payroll', Receipt: 'cat-receipt' };
+      var map = { Invoice: 'cat-invoice', Tax: 'cat-tax', Expense: 'cat-expense', Revenue: 'cat-revenue', Payroll: 'cat-payroll', Receipt: 'cat-receipt' };
       return map[cat] || 'cat-other';
     }
 
     function formatAmount(a) {
-      const n = parseFloat(a);
+      var n = parseFloat(a);
       if (isNaN(n)) return '-';
       return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str || '';
+      var div = document.createElement('div');
+      div.textContent = str == null ? '' : String(str);
       return div.innerHTML;
+    }
+
+    function toggleView() {
+      currentView = currentView === 'table' ? 'cards' : 'table';
+      document.getElementById('viewToggleBtn').textContent = currentView === 'table' ? 'Cards view' : 'Table view';
+      renderRecords();
     }
 
     function renderRecords() {
       renderYearChips();
-      const filtered = getFilteredRecords();
-      const container = document.getElementById('recordsContainer');
+      var filtered = getFilteredMyRecords();
+      var container = document.getElementById('recordsContainer');
 
-      if (filtered.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="icon">No records</div><p>No records found. Click <strong>+ New Record</strong> to add one.</p></div>';
+      if (!filtered.length) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">No records</div><p>No records found. Click <strong>+ New Record</strong> to add your first work entry.</p></div>';
         return;
       }
 
       if (currentView === 'table') {
-        let html = '<div class="table-wrapper"><table><thead><tr>';
-        html += '<th onclick="sortBy(\'date\')">Date</th>';
-        html += '<th onclick="sortBy(\'title\')">Title</th>';
-        html += '<th onclick="sortBy(\'category\')">Category</th>';
-        html += '<th onclick="sortBy(\'amount\')">Amount</th>';
-        html += '<th>Notes</th>';
-        html += '<th>File</th>';
-        html += '<th>Actions</th>';
-        html += '</tr></thead><tbody>';
-        filtered.forEach(r => {
-          html += '<tr>';
-          html += '<td>' + escapeHtml(r.date) + '</td>';
+        var html = '<div class="table-wrapper"><table><thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Amount</th><th>Notes</th><th>File</th><th>Actions</th></tr></thead><tbody>';
+        filtered.forEach(function(r) {
+          html += '<tr><td>' + escapeHtml(r.date) + '</td>';
           html += '<td style="font-weight:600">' + escapeHtml(r.title) + '</td>';
           html += '<td><span class="category-badge ' + catClass(r.category) + '">' + escapeHtml(r.category) + '</span></td>';
           html += '<td style="font-weight:600;color:#81c784">' + formatAmount(r.amount) + '</td>';
           html += '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#888">' + escapeHtml(r.notes) + '</td>';
-          html += '<td>' + (r.fileName ? '<a class="file-link" onclick="viewDetail(\'' + r.id + '\')">📎 ' + escapeHtml(r.fileName) + '</a>' : '<span style="color:#444">-</span>') + '</td>';
+          html += '<td>' + (r.fileName ? '<a class="file-link" onclick="viewDetail(\'' + r.id + '\')">File</a>' : '<span style="color:#444">-</span>') + '</td>';
           html += '<td><div class="action-btns">';
           html += '<button onclick="viewDetail(\'' + r.id + '\')" title="View">View</button>';
-          html += '<button onclick="editRecord(\'' + r.id + '\')" title="Edit">Edit</button>';
+          html += '<button onclick="openRecordModal(\'' + r.id + '\')" title="Edit">Edit</button>';
           html += '<button onclick="deleteRecord(\'' + r.id + '\')" title="Delete">Del</button>';
           html += '</div></td></tr>';
         });
         html += '</tbody></table></div>';
         container.innerHTML = html;
       } else {
-        let html = '<div class="cards-view">';
-        filtered.forEach(r => {
-          html += '<div class="card">';
-          html += '<div class="card-header"><div><h3>' + escapeHtml(r.title) + '</h3><div class="date">' + escapeHtml(r.date) + '</div></div>';
-          html += '<span class="category-badge ' + catClass(r.category) + '">' + escapeHtml(r.category) + '</span></div>';
-          html += '<div class="amount">' + formatAmount(r.amount) + '</div>';
-          if (r.notes) html += '<div class="notes">' + escapeHtml(r.notes) + '</div>';
-          html += '<div class="card-footer">';
-          html += r.fileName ? '<a class="file-link" onclick="viewDetail(\'' + r.id + '\')">📎 ' + escapeHtml(r.fileName) + '</a>' : '<span></span>';
-          html += '<div class="action-btns">';
-          html += '<button onclick="viewDetail(\'' + r.id + '\')" title="View">View</button>';
-          html += '<button onclick="editRecord(\'' + r.id + '\')" title="Edit">Edit</button>';
-          html += '<button onclick="deleteRecord(\'' + r.id + '\')" title="Delete">Del</button>';
-          html += '</div></div></div>';
+        var html2 = '<div class="cards-view">';
+        filtered.forEach(function(r) {
+          html2 += '<div class="card"><div class="card-header"><div><h3>' + escapeHtml(r.title) + '</h3><div class="date">' + escapeHtml(r.date) + '</div></div>';
+          html2 += '<span class="category-badge ' + catClass(r.category) + '">' + escapeHtml(r.category) + '</span></div>';
+          html2 += '<div class="amount">' + formatAmount(r.amount) + '</div>';
+          if (r.notes) html2 += '<div class="notes">' + escapeHtml(r.notes) + '</div>';
+          html2 += '<div class="card-footer">';
+          html2 += r.fileName ? '<a class="file-link" onclick="viewDetail(\'' + r.id + '\')">File</a>' : '<span></span>';
+          html2 += '<div class="action-btns"><button onclick="viewDetail(\'' + r.id + '\')">View</button>';
+          html2 += '<button onclick="openRecordModal(\'' + r.id + '\')">Edit</button>';
+          html2 += '<button onclick="deleteRecord(\'' + r.id + '\')">Del</button></div></div></div>';
         });
-        html += '</div>';
-        container.innerHTML = html;
+        html2 += '</div>';
+        container.innerHTML = html2;
       }
     }
 
-    function setView(v) {
-      currentView = v;
-      document.getElementById('tableViewBtn').classList.toggle('active', v === 'table');
-      document.getElementById('cardViewBtn').classList.toggle('active', v === 'cards');
-      renderRecords();
-    }
-
-    function openModal(editId) {
-      document.getElementById('editId').value = editId || '';
-      document.getElementById('modalTitle').textContent = editId ? 'Edit Record' : 'Add New Record';
+    // ============ RECORD CRUD ============
+    function openRecordModal(id) {
+      editingRecordId = id || null;
+      document.getElementById('recordModalTitle').textContent = id ? 'Edit Record' : 'Add New Record';
       document.getElementById('recFile').value = '';
-      if (!editId) {
+      document.getElementById('existingFileNote').textContent = '';
+
+      if (!id) {
+        document.getElementById('editId').value = '';
         document.getElementById('recTitle').value = '';
         document.getElementById('recDate').value = new Date().toISOString().split('T')[0];
         document.getElementById('recCategory').value = 'Invoice';
         document.getElementById('recAmount').value = '';
         document.getElementById('recNotes').value = '';
+      } else {
+        var r = findRecord(id);
+        if (!r) return;
+        document.getElementById('editId').value = r.id;
+        document.getElementById('recTitle').value = r.title || '';
+        document.getElementById('recDate').value = r.date || '';
+        document.getElementById('recCategory').value = r.category || 'Invoice';
+        document.getElementById('recAmount').value = r.amount || '';
+        document.getElementById('recNotes').value = r.notes || '';
+        if (r.fileName) {
+          document.getElementById('fileLabel').textContent = 'Replace File (currently: ' + r.fileName + ')';
+          document.getElementById('existingFileNote').textContent = 'Current file attached. Choose a new one to replace it, or leave empty to keep it.';
+        } else {
+          document.getElementById('fileLabel').textContent = 'Attach File (saved to Firebase Storage)';
+        }
       }
-      document.getElementById('modalOverlay').classList.add('active');
+      openModal('recordModalOverlay');
     }
 
-    function closeModal() {
-      document.getElementById('modalOverlay').classList.remove('active');
+    function findRecord(id) {
+      for (var i = 0; i < myRecords.length; i++) if (myRecords[i].id === id) return myRecords[i];
+      return null;
     }
 
-    function closeModalOverlay(e) {
-      if (e.target === e.currentTarget) closeModal();
-    }
-
-    function saveRecord() {
-      const title = document.getElementById('recTitle').value.trim();
-      const date = document.getElementById('recDate').value;
-      const category = document.getElementById('recCategory').value;
-      const amount = document.getElementById('recAmount').value;
-      const notes = document.getElementById('recNotes').value.trim();
-      const fileInput = document.getElementById('recFile');
+    async function saveRecord() {
+      var title = document.getElementById('recTitle').value.trim();
+      var date = document.getElementById('recDate').value;
+      var category = document.getElementById('recCategory').value;
+      var amount = document.getElementById('recAmount').value;
+      var notes = document.getElementById('recNotes').value.trim();
+      var fileInput = document.getElementById('recFile');
 
       if (!title) { alert('Title is required.'); return; }
       if (!date) { alert('Date is required.'); return; }
 
-      const editId = document.getElementById('editId').value;
-
-      function doSave(fileName, fileData) {
-        if (editId) {
-          const idx = records.findIndex(r => r.id === editId);
-          if (idx !== -1) {
-            records[idx].title = title;
-            records[idx].date = date;
-            records[idx].category = category;
-            records[idx].amount = amount;
-            records[idx].notes = notes;
-            if (fileName !== undefined) { records[idx].fileName = fileName; records[idx].fileData = fileData; }
-          }
-        } else {
-          records.push({
-            id: generateId(),
-            title, date, category, amount, notes,
-            fileName: fileName || '',
-            fileData: fileData || '',
-            createdAt: new Date().toISOString()
-          });
-        }
-        save();
-        renderRecords();
-        closeModal();
-      }
-
-      if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        if (file.size > 5 * 1024 * 1024) {
-          alert('File too large. Max 5MB.');
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          doSave(file.name, e.target.result);
+      setBtnBusy('saveRecordBtn', true, 'Saving...');
+      try {
+        var data = {
+          title: title,
+          date: date,
+          category: category,
+          amount: amount,
+          notes: notes,
+          ownerUid: currentUser.uid
         };
-        reader.readAsDataURL(file);
-      } else {
-        doSave();
+
+        if (fileInput.files.length > 0) {
+          var file = fileInput.files[0];
+          var ref = storage.ref('uploads/' + currentUser.uid + '/' + Date.now() + '_' + file.name);
+          await ref.put(file);
+          data.fileUrl = await ref.getDownloadURL();
+          data.fileName = file.name;
+        }
+
+        if (editingRecordId) {
+          await db.collection('records').doc(editingRecordId).set(data, { merge: true });
+        } else {
+          data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+          await db.collection('records').add(data);
+        }
+
+        closeModal('recordModalOverlay');
+        await loadMyRecords();
+        if (isAdmin()) await loadAllRecords();
+      } catch (e) {
+        alert('Save failed: ' + e.message);
       }
+      setBtnBusy('saveRecordBtn', false, 'Save Record');
     }
 
-    function editRecord(id) {
-      const r = records.find(x => x.id === id);
-      if (!r) return;
-      document.getElementById('recTitle').value = r.title || '';
-      document.getElementById('recDate').value = r.date || '';
-      document.getElementById('recCategory').value = r.category || 'Invoice';
-      document.getElementById('recAmount').value = r.amount || '';
-      document.getElementById('recNotes').value = r.notes || '';
-      openModal(id);
-    }
-
-    function deleteRecord(id) {
+    async function deleteRecord(id, isAdminDeletion) {
       if (!confirm('Delete this record?')) return;
-      records = records.filter(r => r.id !== id);
-      save();
-      renderRecords();
+      try {
+        await db.collection('records').doc(id).delete();
+        if (isAdminDeletion) await loadAllData(); else await loadMyRecords();
+      } catch (e) { alert('Delete failed: ' + e.message); }
     }
 
-    function clearAll() {
-      if (!confirm('Delete ALL records? This cannot be undone.')) return;
-      records = [];
-      save();
-      renderRecords();
-    }
-
+    // ============ DETAIL VIEW ============
     function viewDetail(id) {
-      const r = records.find(x => x.id === id);
+      var r = getRecordAnywhere(id);
       if (!r) return;
-      let html = '<div style="margin-top:12px">';
-      html += '<p><strong>Date:</strong> ' + escapeHtml(r.date) + '</p>';
-      html += '<p><strong>Category:</strong> <span class="category-badge ' + catClass(r.category) + '">' + escapeHtml(r.category) + '</span></p>';
-      html += '<p><strong>Amount:</strong> ' + formatAmount(r.amount) + '</p>';
-      if (r.notes) html += '<p><strong>Notes:</strong> ' + escapeHtml(r.notes) + '</p>';
+      var html = '<div style="margin-top:12px">';
+      html += '<p style="margin-bottom:6px"><strong>Date:</strong> ' + escapeHtml(r.date) + '</p>';
+      html += '<p style="margin-bottom:6px"><strong>Category:</strong> <span class="category-badge ' + catClass(r.category) + '">' + escapeHtml(r.category) + '</span></p>';
+      html += '<p style="margin-bottom:6px"><strong>Amount:</strong> ' + formatAmount(r.amount) + '</p>';
+      if (r.ownerEmail) html += '<p style="margin-bottom:6px"><strong>Owner:</strong> ' + escapeHtml(r.ownerEmail) + '</p>';
+      if (r.notes) html += '<p style="margin-bottom:6px"><strong>Notes:</strong> ' + escapeHtml(r.notes) + '</p>';
       if (r.fileName) {
-        html += '<p><strong>File:</strong> ' + escapeHtml(r.fileName) + '</p>';
-        if (r.fileData && r.fileData.startsWith('data:image')) {
-          html += '<div style="margin-top:12px"><img src="' + r.fileData + '" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>';
-        } else if (r.fileData) {
-          html += '<p><a class="file-link" href="' + r.fileData + '" download="' + escapeHtml(r.fileName) + '" style="font-size:15px">Download ' + escapeHtml(r.fileName) + '</a></p>';
+        html += '<p style="margin-bottom:6px"><strong>File:</strong> ' + escapeHtml(r.fileName) + '</p>';
+        if (r.fileUrl) {
+          if (/\.(png|jpe?g|gif|webp|bmp)(\?.*)?$/i.test(r.fileName)) {
+            html += '<div style="margin-top:10px"><img src="' + r.fileUrl + '" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>';
+          }
+          html += '<p style="margin-top:10px"><a class="file-link" style="font-size:15px" href="' + r.fileUrl + '" target="_blank" rel="noopener">Open File</a></p>';
         }
       }
-      if (r.createdAt) html += '<p style="margin-top:12px;color:#555;font-size:12px">Created: ' + escapeHtml(r.createdAt) + '</p>';
       html += '</div>';
       document.getElementById('detailTitle').textContent = r.title;
       document.getElementById('detailContent').innerHTML = html;
-      document.getElementById('detailOverlay').classList.add('active');
+      openModal('detailOverlay');
     }
 
-    function closeDetail() { document.getElementById('detailOverlay').classList.remove('active'); }
-    function closeDetailOverlay(e) { if (e.target === e.currentTarget) closeDetail(); }
+    function getRecordAnywhere(id) {
+      for (var i = 0; i < myRecords.length; i++) if (myRecords[i].id === id) return myRecords[i];
+      for (var j = 0; j < allRecords.length; j++) if (allRecords[j].id === id) return allRecords[j];
+      return null;
+    }
 
-    function exportCSV() {
-      if (records.length === 0) { alert('No records to export.'); return; }
-      let csv = 'Title,Date,Category,Amount,Notes,File\n';
-      records.forEach(r => {
-        csv += '"' + (r.title || '').replace(/"/g, '""') + '",';
-        csv += '"' + (r.date || '') + '",';
-        csv += '"' + (r.category || '') + '",';
-        csv += '"' + (r.amount || '') + '",';
-        csv += '"' + (r.notes || '').replace(/"/g, '""') + '",';
-        csv += '"' + (r.fileName || '') + '"\n';
+    // ============ MODAL HELPERS ============
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+    function closeOverlay(e, id) {
+      if (e.target === e.currentTarget) closeModal(id);
+    }
+
+    // ============ ADMIN PANEL ============
+    function populateUserFilter() {
+      var sel = document.getElementById('adminUserFilter');
+      var html = '<option value="">All users</option>';
+      allUsers.forEach(function(u) {
+        html += '<option value="' + u.uid + '">' + escapeHtml(u.email) + '</option>';
       });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'accounting-records-' + new Date().toISOString().split('T')[0] + '.csv';
-      a.click();
-      URL.revokeObjectURL(url);
+      sel.innerHTML = html;
     }
 
-    function importCSV(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const text = e.target.result;
-        const lines = text.split('\n').filter(l => l.trim());
-        if (lines.length < 2) { alert('CSV file is empty or has no data rows.'); return; }
-        let imported = 0;
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
-          const clean = cols.map(c => c.replace(/^"|"$/g, '').replace(/""/g, '"').trim());
-          if (clean[0]) {
-            records.push({
-              id: generateId(),
-              title: clean[0] || '',
-              date: clean[1] || '',
-              category: clean[2] || 'Other',
-              amount: clean[3] || '',
-              notes: clean[4] || '',
-              fileName: clean[5] || '',
-              fileData: '',
-              createdAt: new Date().toISOString()
-            });
-            imported++;
-          }
+    function getFilteredAllRecords() {
+      var search = document.getElementById('adminSearchInput').value.toLowerCase();
+      var uid = document.getElementById('adminUserFilter').value;
+      return allRecords.filter(function(r) {
+        if (uid && r.ownerUid !== uid) return false;
+        if (selectedYear && (!r.date || r.date.indexOf(selectedYear) !== 0)) return false;
+        if (search) {
+          var hay = ((r.title || '') + ' ' + (r.notes || '') + ' ' + (r.category || '') + ' ' + (r.ownerEmail || '') + ' ' + (r.date || '')).toLowerCase();
+          if (hay.indexOf(search) === -1) return false;
         }
-        save();
-        renderRecords();
-        alert('Imported ' + imported + ' records.');
-      };
-      reader.readAsText(file);
-      event.target.value = '';
-    }
-
-    function sortBy(field) {
-      records.sort((a, b) => {
-        let va = a[field] || '';
-        let vb = b[field] || '';
-        if (field === 'amount') { va = parseFloat(va) || 0; vb = parseFloat(vb) || 0; return va - vb; }
-        return va.localeCompare(vb);
+        return true;
       });
-      renderRecords();
     }
 
-    updateStats();
-    renderRecords();
+    function adminYearChipsHtml() {
+      var years = [];
+      allRecords.forEach(function(r) { if (r.date) { var y = r.date.substring(0, 4); if (years.indexOf(y) === -1) years.push(y); } });
+      years.sort().reverse();
+      var html = '<div class="year-chips">';
+      html += '<button class="year-chip ' + (selectedYear === '' ? 'active' : '') + '" onclick="selectYear(\'\', true)">All Years</button>';
+      years.forEach(function(y) {
+        html += '<button class="year-chip ' + (selectedYear === y ? 'active' : '') + '" onclick="selectYear(\'' + y + '\', true)">' + y + '</button>';
+      });
+      html += '</div>';
+      return html;
+    }
+
+    function renderAllRecords() {
+      if (!isAdmin()) return;
+      var filtered = getFilteredAllRecords();
+      var container = document.getElementById('allRecordsContainer');
+
+      if (!filtered.length) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">No records</div><p>No records found.</p></div>';
+        return;
+      }
+
+      var html = adminYearChipsHtml() + '<div class="table-wrapper"><table><thead><tr><th>Date</th><th>Title</th><th>Owner</th><th>Category</th><th>Amount</th><th>Actions</th></tr></thead><tbody>';
+      filtered.forEach(function(r) {
+        html += '<tr><td>' + escapeHtml(r.date) + '</td>';
+        html += '<td style="font-weight:600">' + escapeHtml(r.title) + '</td>';
+        html += '<td style="color:#aaa">' + escapeHtml(r.ownerEmail) + '</td>';
+        html += '<td><span class="category-badge ' + catClass(r.category) + '">' + escapeHtml(r.category) + '</span></td>';
+        html += '<td style="font-weight:600;color:#81c784">' + formatAmount(r.amount) + '</td>';
+        html += '<td><div class="action-btns">';
+        html += '<button onclick="viewDetail(\'' + r.id + '\')" title="View">View</button>';
+        html += '<button onclick="deleteRecord(\'' + r.id + '\', true)" title="Delete">Del</button>';
+        html += '</div></td></tr>';
+      });
+      html += '</tbody></table></div>';
+      container.innerHTML = html;
+    }
+
+    function adminUserStats() {
+      var countMap = {};
+      allRecords.forEach(function(r) {
+        countMap[r.ownerUid] = (countMap[r.ownerUid] || 0) + 1;
+      });
+      allUsers.forEach(function(u) { u.memberCount = countMap[u.uid] || 0; });
+    }
+
+    function renderAdminUsers() {
+      if (!isAdmin()) return;
+      adminUserStats();
+      var container = document.getElementById('usersContainer');
+      var html = '<div class="table-wrapper"><table><thead><tr><th>Email</th><th>Name</th><th>Role</th><th>Records</th><th>Actions</th></tr></thead><tbody>';
+      allUsers.forEach(function(u) {
+        html += '<tr>';
+        html += '<td style="font-weight:600">' + escapeHtml(u.email) + '</td>';
+        html += '<td style="color:#aaa">' + escapeHtml(u.displayName || '-') + '</td>';
+        html += '<td>' + (u.role === 'admin' ? '<span class="badge badge-green">Admin</span>' : '<span class="badge badge-gray">User</span>') + '</td>';
+        html += '<td>' + u.memberCount + '</td>';
+        html += '<td><div class="action-btns">';
+        html += '<button onclick="openUserModal(\'' + u.uid + '\')" title="Manage">Manage</button>';
+        if (u.role === 'admin' && u.uid !== currentUser.uid) {
+          html += '<button onclick="adminToggleRole(\'' + u.uid + '\')" title="Demote">Demote</button>';
+        } else if (u.role !== 'admin') {
+          html += '<button onclick="adminToggleRole(\'' + u.uid + '\')" title="Make admin">Promote</button>';
+        }
+        html += '</div></td></tr>';
+      });
+      html += '</tbody></table></div>';
+      container.innerHTML = html;
+    }
+
+    function openUserModal(uid) {
+      adminTargetUid = uid;
+      var u = getUserByUid(uid);
+      if (!u) return;
+      var html = '<div style="margin-top:12px">';
+      html += '<p style="margin-bottom:6px"><strong>Email:</strong> ' + escapeHtml(u.email) + '</p>';
+      html += '<p style="margin-bottom:6px"><strong>Name:</strong> ' + escapeHtml(u.displayName || '-') + '</p>';
+      html += '<p style="margin-bottom:6px"><strong>Role:</strong> ' + (u.role === 'admin' ? 'Admin' : 'User') + '</p>';
+      html += '<p style="margin-bottom:6px"><strong>Records:</strong> ' + u.memberCount + '</p>';
+      html += '</div>';
+      document.getElementById('userDetailContent').innerHTML = html;
+      var delBtn = document.getElementById('adminDeleteUserBtn');
+      delBtn.style.display = (uid === currentUser.uid) ? 'none' : '';
+      openModal('userModalOverlay');
+    }
+
+    function getUserByUid(uid) {
+      for (var i = 0; i < allUsers.length; i++) if (allUsers[i].uid === uid) return allUsers[i];
+      return null;
+    }
+
+    async function adminToggleRole(uid) {
+      var u = getUserByUid(uid);
+      if (!u) return;
+      var newRole = u.role === 'admin' ? 'user' : 'admin';
+      if (!confirm('Change role of ' + u.email + ' to ' + newRole + '?')) return;
+      try {
+        await db.collection('users').doc(uid).update({ role: newRole });
+        await loadAllUsers();
+      } catch (e) { alert('Failed: ' + e.message); }
+    }
+
+    async function adminDeleteUser() {
+      var uid = adminTargetUid;
+      if (!uid) return;
+      var u = getUserByUid(uid);
+      if (!confirm('Delete user ' + u.email + ' and ALL their records/file? This cannot be undone.')) return;
+      try {
+        // delete their records
+        var recSnap = await db.collection('records').where('ownerUid', '==', uid).get();
+        var batch = db.batch();
+        recSnap.forEach(function(doc) { batch.delete(doc.ref); });
+        await batch.commit();
+
+        // delete their files from storage
+        try {
+          var list = await storage.ref('uploads/' + uid).listAll();
+          var delPromises = list.items.map(function(item) { return item.delete(); });
+          await Promise.all(delPromises);
+        } catch (se) { /* folder may not exist */ }
+
+        var emailForNote = u.email;
+
+        // Delete Firestore user doc. (Auth login deletion needs Admin SDK/Console.)
+        await db.collection('users').doc(uid).delete();
+
+        alert('User records and files deleted from Firestore/Storage.\n\nNote: To fully delete the login account, go to Firebase Console > Authentication > ' + emailForNote + ' > Delete.');
+        closeModal('userModalOverlay');
+        await loadAllData();
+      } catch (e) {
+        alert('Deletion failed: ' + e.message);
+      }
+    }
+
+    // ============ KEYBOARD ENTER ============
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        if (document.getElementById('loginForm').style.display !== 'none' && !document.getElementById('authScreen').style.display === true) {
+          handleLogin();
+        }
+      }
+    });
+
+    // ============ INIT ============
+    showAuth();
   </script>
 </body>
 </html>
