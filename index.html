@@ -982,7 +982,7 @@
 
     // Tokens only live for the tab session (no localStorage persistence) to reduce
     // session-hijack risk from stored credentials.
-    auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
     // ============ STATE ============
     var currentUser = null;       // Firebase user object
